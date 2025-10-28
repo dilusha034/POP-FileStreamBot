@@ -283,24 +283,48 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <!-- === Timer එකේ මොළය === -->
+<!-- === "නියම මොහොත" Timer එකේ මොළය === -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const timerElement = document.getElementById('countdown-timer');
+        // අපිට අවශ්‍ය කරන හැමදේම අල්ලගන්නවා
         const noticeBox = document.getElementById('subtitle-timer-notice');
-        let timeLeft = 60; // තත්පර 60න් පටන් ගමු
+        const timerElement = document.getElementById('countdown-timer');
+        
+        // player instance එක හොයාගන්නවා. Plyr.io සාමාන්‍යයෙන් මේ විදියට හොයාගන්න දෙනවා.
+        const player = Plyr.get('#player')[0]; 
+        
+        let isFirstPlay = true; // මේක පළවෙනි play එකද කියලා බලන්න
 
-        const countdown = setInterval(() => {
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                // Timer එක ඉවර වුනාම, box එක ලස්සනට අයින් කරමු
-                noticeBox.style.opacity = '0';
-                noticeBox.style.transform = 'scale(0.9)';
-                setTimeout(() => { noticeBox.style.display = 'none'; }, 500); // Animation එකට වෙලාව දීලා අයින් කරනවා
-            } else {
-                timerElement.textContent = timeLeft;
-                timeLeft--;
-            }
-        }, 1000); // තත්පරෙන් තත්පරේ අඩු වෙනවා
+        if (player) {
+            // Player එක ඇත්තටම play වෙන්න පටන් ගත්තම විතරක් වැඩ කරන්න
+            player.on('playing', () => {
+                // මේක පළවෙනි play එක නම් විතරක් timer එක පටන් ගන්න
+                if (isFirstPlay) {
+                    isFirstPlay = false; // ආයෙත් මේක වැඩ නොකරන්න flag එක වෙනස් කරනවා
+                    
+                    let timeLeft = 60;
+                    noticeBox.style.display = 'block'; // දැන් තමයි notice box එක පෙන්වන්නේ
+
+                    const countdown = setInterval(() => {
+                        if (timeLeft <= 0) {
+                            clearInterval(countdown);
+                            // Timer එක ඉවර වුනාම, box එක ලස්සනට අයින් කරමු
+                            noticeBox.style.opacity = '0';
+                            noticeBox.style.transform = 'scale(0.9)';
+                            setTimeout(() => { noticeBox.style.display = 'none'; }, 500);
+                        } else {
+                            timerElement.textContent = timeLeft;
+                            timeLeft--;
+                        }
+                    }, 1000);
+                }
+            });
+        }
+        
+        // මුලින්ම notice box එක හංගලා තියමු
+        if (noticeBox) {
+            noticeBox.style.display = 'none';
+        }
     });
 </script>
 </html>
