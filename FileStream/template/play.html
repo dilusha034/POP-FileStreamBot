@@ -13,6 +13,54 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #subtitle-timer-notice {
+            background: linear-gradient(145deg, #2e303d, #21232e);
+            color: #f8f8f2;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            border: 1px solid #44475a;
+            font-family: 'Josefin Sans', sans-serif;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+        .notice-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #ffb86c; /* Orange color for attention */
+            margin-bottom: 15px;
+        }
+        .notice-header svg {
+            margin-right: 10px;
+        }
+        .main-text {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        .timer-display {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #50fa7b; /* Green for the timer */
+            margin-bottom: 15px;
+            animation: pulse 1.5s infinite;
+        }
+        .warning-text {
+            font-size: 0.9em;
+            color: #ff79c6; /* Pink/Purple for warning */
+            opacity: 0.9;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
 </head>
 <body>
     <nav>
@@ -36,6 +84,20 @@
    <div class="outer">
         <div class="inner">
             <div class="main" id="main">
+                <!-- === START: මෙහෙයුම "මායාවේ මිනිත්තුව" === -->
+                <div id="subtitle-timer-notice">
+                    <div class="notice-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-7v2h2v-2h-2zm0-8v6h2V7h-2z"></path></svg>
+                        <span>ඔබගේ අවධානය පිණිසයි</span>
+                    </div>
+                    <p class="main-text">උපසිරැසි ජනනය වෙමින් පවතී. කරුණාකර රැඳී සිටින්න...</p>
+                    <div class="timer-display">
+                        තත්පර <span id="countdown-timer">60</span> කින් සූදානම් වේ.
+                    </div>
+                    <p class="warning-text"><b>සැලකිය යුතුයි:</b> මෙම අවස්ථාවේදී වීඩියෝව skip කළහොත්, උපසිරැසි දර්ශනය නොවිය හැක.</p>
+                </div>
+                <!-- === END: මෙහෙයුම "මායාවේ මිනිත්තුව" === -->
+                
                 <!-- අපි video src එක මෙතනින් ඉවත් කරනවා. JavaScript එකෙන් පාලනය කරන්න. -->
                 <video id="player" playsinline controls width="100%"></video>
                 <div class="file-name">
@@ -219,5 +281,26 @@ document.addEventListener('DOMContentLoaded', () => {
         attachExtraFeatures(player);
     }
 });
+</script>
+<!-- === Timer එකේ මොළය === -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const timerElement = document.getElementById('countdown-timer');
+        const noticeBox = document.getElementById('subtitle-timer-notice');
+        let timeLeft = 60; // තත්පර 60න් පටන් ගමු
+
+        const countdown = setInterval(() => {
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                // Timer එක ඉවර වුනාම, box එක ලස්සනට අයින් කරමු
+                noticeBox.style.opacity = '0';
+                noticeBox.style.transform = 'scale(0.9)';
+                setTimeout(() => { noticeBox.style.display = 'none'; }, 500); // Animation එකට වෙලාව දීලා අයින් කරනවා
+            } else {
+                timerElement.textContent = timeLeft;
+                timeLeft--;
+            }
+        }, 1000); // තත්පරෙන් තත්පරේ අඩු වෙනවා
+    });
 </script>
 </html>
