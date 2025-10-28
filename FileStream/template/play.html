@@ -225,10 +225,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // ==========================================================
-        // === මෙන්න අපේ එකම සහ අවසන් වෙනස් කිරීම! ===
-        // 'playing' වෙනුවට 'play' event එකට මාරු කළා
+        // === මෙන්න අපේ නිවැරදිම සහ අවසන් විසඳුම! ===
+        // වීඩියෝව ඇත්තටම play වෙන්න පටන් ගත්තම (buffer වෙලා ඉවරවෙලා) මේක වැඩ කරනවා
         // ==========================================================
-        player.on('play', () => {
+        player.on('playing', () => {
             if (isFirstPlay) {
                 isFirstPlay = false;
                 if (fileName.toLowerCase().endsWith('.mkv')) {
@@ -251,8 +251,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     // === END: "පාවෙන දැනුම්දීම" සඳහා අවශ්‍ය දේවල් ===
 
+
+    // Player එකට අදාළ අනෙකුත් පහසුකම් (touch controls) එකතු කරන function එක
+    // --- ඔයාගේ මේ function එකේ එක අකුරක්වත් වෙනස් කරලා නෑ ---
     const attachExtraFeatures = (player) => {
-        // ඔයාගේ මේ function එකේ එක අකුරක්වත් වෙනස් කරලා නෑ
         player.on('enterfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.lock === 'function') { screen.orientation.lock('landscape').catch(() => {}); } } catch (err) {} } });
         player.on('exitfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.unlock === 'function') { screen.orientation.unlock(); } } catch (err) {} } });
         const playerContainer = player.elements.container;
