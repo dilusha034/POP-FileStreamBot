@@ -210,14 +210,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileUrl = "{{file_url}}";
     const videoElement = document.getElementById('player');
 
-    // === START: අලුතෙන් බද්ධ කරන ලද කොටස ===
+    // === START: "පාවෙන දැනුම්දීම" සඳහා අවශ්‍ය දේවල් ===
     const noticeBox = document.getElementById('floating-notice');
     const timerElement = document.getElementById('countdown-timer');
     const closeBtn = document.getElementById('notice-close-btn');
     let isFirstPlay = true;
     let countdownInterval = null;
 
-    // Notice box එකට අදාළ logic එක වෙනම function එකක දානවා
     const attachNoticeLogic = (player) => {
         closeBtn.addEventListener('click', () => {
             clearInterval(countdownInterval);
@@ -225,7 +224,11 @@ document.addEventListener('DOMContentLoaded', () => {
             noticeBox.classList.add('hidden');
         });
 
-        player.on('playing', () => {
+        // ==========================================================
+        // === මෙන්න අපේ එකම සහ අවසන් වෙනස් කිරීම! ===
+        // 'playing' වෙනුවට 'play' event එකට මාරු කළා
+        // ==========================================================
+        player.on('play', () => {
             if (isFirstPlay) {
                 isFirstPlay = false;
                 if (fileName.toLowerCase().endsWith('.mkv')) {
@@ -246,12 +249,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     };
-    // === END: අලුතෙන් බද්ධ කරන ලද කොටස ===
+    // === END: "පාවෙන දැනුම්දීම" සඳහා අවශ්‍ය දේවල් ===
 
-
-    // Player එකට අදාළ අනෙකුත් පහසුකම් (touch controls) එකතු කරන function එක
-    // --- ඔයාගේ මේ function එකේ එක අකුරක්වත් වෙනස් කරලා නෑ ---
     const attachExtraFeatures = (player) => {
+        // ඔයාගේ මේ function එකේ එක අකුරක්වත් වෙනස් කරලා නෑ
         player.on('enterfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.lock === 'function') { screen.orientation.lock('landscape').catch(() => {}); } } catch (err) {} } });
         player.on('exitfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.unlock === 'function') { screen.orientation.unlock(); } } catch (err) {} } });
         const playerContainer = player.elements.container;
@@ -293,15 +294,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('heading').style.visibility = 'visible';
     };
 
-    // --- ප්‍රධාන ක්‍රියාන්විතය (ඔයාගේ මුල් කෝඩ් එකමයි) ---
+    // --- ඔයාගේ මුල්, වැඩ කරන කෝඩ් එක ---
     if (fileName.toLowerCase().endsWith('.mkv')) {
-        console.log("MKV ගොනුවක් හඳුනාගත්තා. උපසිරැසි සොයමින්...");
         fetch(`/subtitles/${fileUrl.split('/').pop()}`)
             .then(response => response.json())
             .then(subtitles => {
                 let tracks = [];
                 if (subtitles && subtitles.length > 0) {
-                    console.log("උපසිරැසි හමුවුනා:", subtitles);
                     tracks = subtitles.map((sub, i) => ({
                         kind: 'subtitles',
                         label: sub.label || sub.language.toUpperCase(),
@@ -309,10 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         src: `/subtitle/${fileUrl.split('/').pop()}?index=${sub.index}`,
                         default: i === 0
                     }));
-                } else {
-                    console.log("උපසිරැසි හමු නොවුනි.");
                 }
-                
                 const player = new Plyr(videoElement, { captions: { active: true, update: true, language: 'auto' } });
                 player.source = {
                     type: 'video',
@@ -321,21 +317,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     tracks: tracks
                 };
                 attachExtraFeatures(player);
-                attachNoticeLogic(player); // <<<--- මෙන්න එකම එකතු කිරීම!
+                attachNoticeLogic(player);
             })
             .catch(err => {
-                console.error("උපසිරැසි ගෙන ඒමේදී දෝෂයක්:", err);
                 const player = new Plyr(videoElement);
                 player.source = { type: 'video', title: fileName, sources: [{ src: fileUrl, type: 'video/mp4' }] };
                 attachExtraFeatures(player);
-                attachNoticeLogic(player); // <<<--- මෙන්න එකම එකතු කිරීම!
+                attachNoticeLogic(player);
             });
     } else {
-        console.log("MKV නොවන ගොනුවක්. සාමාන්‍ය පරිදි Player එක පටන් ගන්නවා.");
         const player = new Plyr(videoElement);
         player.source = { type: 'video', title: fileName, sources: [{ src: fileUrl, type: 'video/mp4' }] };
         attachExtraFeatures(player);
-        attachNoticeLogic(player); // <<<--- මෙන්න එකම එකතු කිරීම!
+        attachNoticeLogic(player);
     }
 });
 </script>
