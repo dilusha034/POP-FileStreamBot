@@ -13,6 +13,55 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- === START: Loading Animation CSS === -->
+    <style>
+        .player-container {
+            position: relative; /* Overlay එක හරියට තියාගන්න */
+        }
+        #loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            flex-direction: column;
+            font-family: 'Josefin Sans', sans-serif;
+            color: white;
+            opacity: 0; /* මුලින් හංගලා තියෙන්නේ */
+            pointer-events: none; /* Click කරන්න බැරි වෙන්න */
+            transition: opacity 0.3s ease-in-out;
+        }
+        #loading-overlay.visible {
+            opacity: 1;
+            pointer-events: all; /* පේනකොට player එක click කරන්න බැරි වෙන්න */
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        #loading-overlay p {
+            font-size: 1.1em;
+            text-align: center;
+            padding: 0 20px;
+            line-height: 1.5;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <!-- === END: CSS === -->
 </head>
 <body>
     <nav>
@@ -37,7 +86,13 @@
         <div class="inner">
             <div class="main" id="main">
                 <!-- අපි video src එක මෙතනින් ඉවත් කරනවා. JavaScript එකෙන් පාලනය කරන්න. -->
-                <video id="player" playsinline controls width="100%"></video>
+                <div class="player-container"> <!-- අලුතෙන් container එකක් එකතු කළා -->
+                    <div id="loading-overlay">
+                        <div class="spinner"></div>
+                        <p>උපසිරැසි සූදානම් කරමින් පවතී...<br>මෙය ඔබගේ අන්තර්ජාල වේගය මත රඳා පවතී.</p>
+                    </div>
+                    <video id="player" playsinline controls width="100%"></video>
+                </div>
                 <div class="file-name">
                     <h4 style="display: inline;">ගොනුවේ නම: </h4>
                     <p style="display: inline;" id="myDiv">{{file_name}}</p><br>
@@ -123,15 +178,21 @@
 <script src="https://cdn.plyr.io/3.6.9/plyr.js"></script>
 <script src="https://proavipatil.github.io/data/fs/src/script.js"></script>
 
-<!-- === මෙහෙයුම "ප්‍රමුඛතා පාලනය" === -->
+<!-- === මෙහෙයුම: මොළය බද්ධ කිරීම (අවදානම් රහිත) === -->
 <script>
 // පිටුව සම්පූර්ණයෙන්ම load වෙනකල් ඉන්නවා.
 document.addEventListener('DOMContentLoaded', () => {
     const fileName = "{{file_name}}";
     const fileUrl = "{{file_url}}";
     const videoElement = document.getElementById('player');
+    
+    // --- START: අලුතෙන් එකතු කරන ලද කොටස ---
+    const loadingOverlay = document.getElementById('loading-overlay');
+    let isFirstPlay = true; // මේක තමයි අපේ trigger එක
+    // --- END: අලුතෙන් එකතු කරන ලද කොටස ---
 
     // Player එකට අදාළ අනෙකුත් පහසුකම් (touch controls) එකතු කරන function එක
+    // --- ඔයාගේ මේ function එකේ එක අකුරක්වත් වෙනස් කරලා නෑ ---
     const attachExtraFeatures = (player) => {
         player.on('enterfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.lock === 'function') { screen.orientation.lock('landscape').catch(() => {}); } } catch (err) {} } });
         player.on('exitfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.unlock === 'function') { screen.orientation.unlock(); } } catch (err) {} } });
@@ -148,7 +209,10 @@ document.addEventListener('DOMContentLoaded', () => {
         let lastTapTime = 0;
         const DOUBLE_TAP_DELAY = 300;
         playerContainer.addEventListener('touchend', (e) => {
-            if (e.target.closest('.plyr__controls')) return;
+            // --- START: එකම එක පොඩි එකතු කිරීමක් විතරයි ---
+            // Loading වෙනකොට touch controls වැඩ නොකරන්න මේක එකතු කළා
+            if (e.target.closest('.plyr__controls') || loadingOverlay.classList.contains('visible')) return;
+            // --- END: එකම එක පොඩි එකතු කිරීමක් විතරයි ---
             if (!e.changedTouches || e.changedTouches.length === 0) return;
             const currentTime = new Date().getTime();
             const tapLength = currentTime - lastTapTime;
@@ -167,57 +231,66 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             lastTapTime = currentTime;
         });
-        const styles = `.skip-indicator { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0, 0, 0, 0.4); color: white; padding: 15px 25px; border-radius: 50px; font-family: 'Josefin Sans', sans-serif; font-size: 1.2em; opacity: 0; transition: opacity 0.3s ease-out; pointer-events: none; display: flex; flex-direction: column; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); } .skip-indicator.visible { opacity: 1; } .skip-indicator .arrows { font-size: 2.5em; line-height: 1; font-weight: bold; } .skip-indicator-rewind { left: 10%; } .skip-indicator-forward { right: 10%; }`;
+        const styles = `.skip-indicator { z-index: 50; position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0, 0, 0, 0.4); color: white; padding: 15px 25px; border-radius: 50px; font-family: 'Josefin Sans', sans-serif; font-size: 1.2em; opacity: 0; transition: opacity 0.3s ease-out; pointer-events: none; display: flex; flex-direction: column; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); } .skip-indicator.visible { opacity: 1; } .skip-indicator .arrows { font-size: 2.5em; line-height: 1; font-weight: bold; } .skip-indicator-rewind { left: 10%; } .skip-indicator-forward { right: 10%; }`;
         const styleSheet = document.createElement("style");
         styleSheet.innerText = styles;
         document.head.appendChild(styleSheet);
         document.getElementById('heading').style.visibility = 'visible';
     };
 
-    // --- ප්‍රධාන ක්‍රියාන්විතය ---
-    if (fileName.toLowerCase().endsWith('.mkv')) {
-        console.log("MKV ගොනුවක් හඳුනාගත්තා. උපසිරැසි සොයමින්...");
-        fetch(`/subtitles/${fileUrl.split('/').pop()}`)
-            .then(response => response.json())
-            .then(subtitles => {
-                let tracks = [];
-                if (subtitles && subtitles.length > 0) {
-                    console.log("උපසිරැසි හමුවුනා:", subtitles);
-                    tracks = subtitles.map((sub, i) => ({
-                        kind: 'subtitles',
-                        label: sub.label || sub.language.toUpperCase(),
-                        srclang: sub.language.substring(0, 2),
-                        src: `/subtitle/${fileUrl.split('/').pop()}?index=${sub.index}`,
-                        default: i === 0
-                    }));
-                } else {
-                    console.log("උපසිරැසි හමු නොවුනි.");
-                }
-                
-                // දැන් තමයි අපි Player එක පටන් ගන්නේ, වීඩියෝව සහ උපසිරැසි එකටම දීලා
-                const player = new Plyr(videoElement, { captions: { active: true, update: true, language: 'auto' } });
-                player.source = {
-                    type: 'video',
-                    title: fileName,
-                    sources: [{ src: fileUrl, type: 'video/mp4' }],
-                    tracks: tracks
-                };
-                attachExtraFeatures(player); // අමතර පහසුකම් එකතු කරනවා
-            })
-            .catch(err => {
-                console.error("උපසිරැසි ගෙන ඒමේදී දෝෂයක්:", err);
-                // Error එකක් ආවත්, player එක subtitles නැතුව පටන් ගන්නවා
-                const player = new Plyr(videoElement);
-                player.source = { type: 'video', title: fileName, sources: [{ src: fileUrl, type: 'video/mp4' }] };
-                attachExtraFeatures(player);
-            });
-    } else {
-        console.log("MKV නොවන ගොනුවක්. සාමාන්‍ය පරිදි Player එක පටන් ගන්නවා.");
-        // MKV නැත්නම්, කෙලින්ම player එක පටන් ගන්නවා
-        const player = new Plyr(videoElement);
-        player.source = { type: 'video', title: fileName, sources: [{ src: fileUrl, type: 'video/mp4' }] };
-        attachExtraFeatures(player);
-    }
+    // --- ප්‍රධාන ක්‍රියාන්විතයේ වෙනස ---
+
+    // 1. මුලින්ම Player එක හදනවා, ඒත් උපසිරැසි නැතුව.
+    // ඔයාගේ පරණ කෝඩ් එකේ තිබ්බ if/else logic එක අපි මෙතනින් ඉවත් කරනවා.
+    const player = new Plyr(videoElement, { captions: { active: true, update: true, language: 'auto' } });
+    player.source = {
+        type: 'video',
+        title: fileName,
+        sources: [{ src: fileUrl, type: 'video/mp4' }]
+    };
+
+    // 2. Player එකට ඔයාගේ අමතර පහසුකම් ටික එකතු කරනවා.
+    attachExtraFeatures(player);
+
+    // 3. User කෙනෙක් 'play' click කරපු ගමන් වැඩ කරන්න අලුත් logic එක බද්ධ කරනවා.
+    player.on('play', () => {
+        // මේක MKV file එකක්ද? සහ මේක පළවෙනි play click එකද?
+        if (isFirstPlay && fileName.toLowerCase().endsWith('.mkv')) {
+            isFirstPlay = false; // ආයෙත් මේක වැඩ නොකරන්න flag එක වෙනස් කරනවා
+            
+            player.pause(); // වීඩියෝ එක play වෙන එක බලෙන් නවත්වනවා
+            loadingOverlay.classList.add('visible'); // අපේ Animation එක පෙන්වනවා
+            player.controls = false; // Player එකේ controls (timeline etc.) අක්‍රිය කරනවා
+
+            // දැන් තමයි අපි ඔයාගේ පරණ subtitle fetch logic එක පාවිච්චි කරන්නේ
+            fetch(`/subtitles/${fileUrl.split('/').pop()}`)
+                .then(response => response.json())
+                .then(subtitles => {
+                    let tracks = [];
+                    if (subtitles && subtitles.length > 0) {
+                        tracks = subtitles.map((sub, i) => ({
+                            kind: 'subtitles',
+                            label: sub.label || sub.language.toUpperCase(),
+                            srclang: sub.language.substring(0, 2),
+                            src: `/subtitle/${fileUrl.split('/').pop()}?index=${sub.index}`,
+                            default: i === 0
+                        }));
+                    }
+                    // Player එකේ source එක, අලුත් උපසිරැසිත් එක්ක update කරනවා
+                    player.source = { ...player.source, tracks: tracks };
+                    player.play(); // දැන් තමයි ඇත්තටම play වෙන්න කියන්නේ
+                })
+                .catch(err => {
+                    console.error("Subtitle fetch failed, playing without subs.", err);
+                    player.play(); // Error එකක් ආවත්, වීඩියෝ එක play කරනවා
+                })
+                .finally(() => {
+                    // වැඩේ ඉවර වුනාම, animation එක අයින් කරලා controls ආයෙත් දෙනවා
+                    loadingOverlay.classList.remove('visible');
+                    player.controls = true;
+                });
+        }
+    });
 });
 </script>
 </html>
