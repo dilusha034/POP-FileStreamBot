@@ -52,7 +52,7 @@ async def watch_handler(request: web.Request):
 
 # --- START: මෙතනින් තමයි ලොකුම වෙනස පටන් ගන්නේ ---
 
-# --- උපසිරැසි තොරතුරු ලබාදෙන, අවසානම සහ 100%ක්ම නිවැරදි Route එක ---
+# --- උපසිරැසි තොරතුරු ලබාදෙන, වේගය වැඩි කල Route එක ---
 @routes.get("/subtitles/{db_id}")
 async def subtitles_json_handler(request: web.Request):
     try:
@@ -68,18 +68,16 @@ async def subtitles_json_handler(request: web.Request):
         file_id = await tg_connect.get_file_properties(db_id, multi_clients)
         temp_file_path = f"/tmp/{db_id}"
 
-        # --- START: මෙන්න අපේ ශල්‍යකර්ම ප්‍රහාරය ---
+        # --- මෙන්න අපේ වේගය වැඩි කිරීමේ මෙහෙයුම ---
         
-        # 1. ටෙලිග්‍රෑම් නීති වලට අනුව, එකපාර ඉල්ලිය හැකි උපරිම ප්‍රමාණය (1MB)
         chunk_size = 1024 * 1024 
         
-        # 2. උපසිරැසි හඳුනාගැනීමට අපට අවශ්‍ය සම්පූර්ණ ප්‍රමාණය (5MB)
-        total_bytes_to_download = 5 * 1024 * 1024
+        # --- අපි වෙනස් කරන එකම එක පේළිය! ---
+        # 5MB වෙනුවට දැන් අපි 2MB ක් විතරක් download කරනවා.
+        total_bytes_to_download = 2 * 1024 * 1024 # 5MB සිට 2MB දක්වා අඩු කළා
 
-        # 3. 1MB කොටස් කීයක් අවශ්‍යදැයි ගණනය කිරීම (5MB / 1MB = 5)
         parts_to_fetch = math.ceil(total_bytes_to_download / chunk_size)
 
-        # 4. yield_file ශ්‍රිතයට නිවැරදිම තොරතුරු ලබා දීම
         streamer = tg_connect.yield_file(
             file_id,
             index,
@@ -90,21 +88,16 @@ async def subtitles_json_handler(request: web.Request):
             chunk_size=chunk_size
         )
         
-        # 5. ලැබෙන 1MB කොටස් එකතු කර තාවකාලික ෆයිල් එක සෑදීම
         async with aiofiles.open(temp_file_path, "wb") as f:
             async for chunk in streamer:
                 await f.write(chunk)
         
-        # --- END: ශල්‍යකර්ම ප්‍රහාරය අවසන් ---
-
-        # දැන් උපසිරැසි හඳුනාගැනීම සාර්ථකව සිදු වේවි
         subtitles = await get_subtitle_streams(temp_file_path)
         
-        await aio_os.remove(temp_file_path) # වැඩේ ඉවර උනාම temp file එක මකනවා
+        await aio_os.remove(temp_file_path)
         
         return web.json_response(subtitles)
     except Exception as e:
-        # Error එක log file එකේ පැහැදිලිව සටහන් කරනවා
         logging.error(f"FATAL ERROR in subtitles_json_handler: {e}", exc_info=True)
         return web.json_response([])
 
