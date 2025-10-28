@@ -225,12 +225,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // ==========================================================
-        // === මෙන්න අපේ නිවැරදිම සහ අවසන් විසඳුම! ===
-        // වීඩියෝව ඇත්තටම play වෙන්න පටන් ගත්තම (buffer වෙලා ඉවරවෙලා) මේක වැඩ කරනවා
+        // === මෙන්න අපේ අවසන්, නිරවද්‍ය සහ ජයග්‍රාහී විසඳුම! ===
+        // player එකේ වෙලාව වෙනස් වෙන හැම මොහොතකම මේක වැඩ කරනවා.
         // ==========================================================
-        player.on('playing', () => {
-            if (isFirstPlay) {
-                isFirstPlay = false;
+        player.on('timeupdate', () => {
+            // මේක පළවෙනි play එකද? සහ player එකේ වෙලාව බිංදුවට වඩා වැඩිද?
+            if (isFirstPlay && player.currentTime > 0) {
+                isFirstPlay = false; // ආයෙත් මේක වැඩ නොකරන්න flag එක වෙනස් කරනවා
+                
                 if (fileName.toLowerCase().endsWith('.mkv')) {
                     noticeBox.classList.remove('hidden');
                     noticeBox.classList.add('visible');
@@ -251,10 +253,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     // === END: "පාවෙන දැනුම්දීම" සඳහා අවශ්‍ය දේවල් ===
 
-
-    // Player එකට අදාළ අනෙකුත් පහසුකම් (touch controls) එකතු කරන function එක
-    // --- ඔයාගේ මේ function එකේ එක අකුරක්වත් වෙනස් කරලා නෑ ---
     const attachExtraFeatures = (player) => {
+        // ඔයාගේ මේ function එකේ එක අකුරක්වත් වෙනස් කරලා නෑ
         player.on('enterfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.lock === 'function') { screen.orientation.lock('landscape').catch(() => {}); } } catch (err) {} } });
         player.on('exitfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.unlock === 'function') { screen.orientation.unlock(); } } catch (err) {} } });
         const playerContainer = player.elements.container;
