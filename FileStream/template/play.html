@@ -36,8 +36,8 @@
    <div class="outer">
         <div class="inner">
             <div class="main" id="main">
-                <video id="player" class="player" src="{{file_url}}" type="video/mp4" playsinline controls width="100%"></video>
-                <div class="player"></div>
+                <!-- අපි video src එක මෙතනින් ඉවත් කරනවා. JavaScript එකෙන් පාලනය කරන්න. -->
+                <video id="player" playsinline controls width="100%"></video>
                 <div class="file-name">
                     <h4 style="display: inline;">ගොනුවේ නම: </h4>
                     <p style="display: inline;" id="myDiv">{{file_name}}</p><br>
@@ -123,126 +123,101 @@
 <script src="https://cdn.plyr.io/3.6.9/plyr.js"></script>
 <script src="https://proavipatil.github.io/data/fs/src/script.js"></script>
 
-<!-- === මෙහෙයුම "අවසන් විජයග්‍රහණය" === -->
+<!-- === මෙහෙයුම "ප්‍රමුඛතා පාලනය" === -->
 <script>
-    const commandoInterval = setInterval(function() {
-        const videoElement = document.getElementById('player');
-        // අපි Plyr player එක සම්පූර්ණයෙන්ම සූදානම් වෙනකල් ඉවසීමෙන් බලාගෙන ඉන්නවා
-        if (videoElement && typeof Plyr !== 'undefined' && videoElement.plyr) {
-            clearInterval(commandoInterval);
-            console.log("VICTORY: Player බලකොටුව අල්ලා ගත්තා! අවසන් සැලැස්ම ක්‍රියාත්මකයි...");
-            
-            try {
-                const player = videoElement.plyr;
-                const fileName = "{{file_name}}";
-                const fileUrl = "{{file_url}}";
-                
-                // === START: The Final Subtitle Injection ===
-                if (fileName.toLowerCase().endsWith('.mkv')) {
-                    // 1. අපේ server එකෙන් උපසිරැසි list එක ඉල්ලගන්නවා
-                    fetch(`/subtitles/${fileUrl.split('/').pop()}`)
-                        .then(response => response.json())
-                        .then(subtitles => {
-                            // 2. උපසිරැසි හම්බවුනොත් විතරක් මේ ටික වැඩ කරනවා
-                            if (subtitles && subtitles.length > 0) {
-                                console.log("උපසිරැසි හමුවුනා:", subtitles);
-                                
-                                // 3. Player එකට දෙන්න ඕන අලුත් tracks list එක හදාගන්නවා
-                                const newTracks = subtitles.map((sub, i) => ({
-                                    kind: 'subtitles',
-                                    label: sub.label || sub.language.toUpperCase(),
-                                    srclang: sub.language.substring(0, 2),
-                                    src: `/subtitle/${fileUrl.split('/').pop()}?index=${sub.index}`,
-                                    default: i === 0 // පළවෙනි එක default විදියට තෝරනවා
-                                }));
+// පිටුව සම්පූර්ණයෙන්ම load වෙනකල් ඉන්නවා.
+document.addEventListener('DOMContentLoaded', () => {
+    const fileName = "{{file_name}}";
+    const fileUrl = "{{file_url}}";
+    const videoElement = document.getElementById('player');
 
-                                // 4. --- මෙන්න වැදගත්ම සහ මැජික්ම කොටස ---
-                                // අපි player එකේ දැනට තියෙන source එකට, අලුතෙන් හදපු tracks ටික එකතු කරනවා.
-                                player.source = {
-                                    ...player.source,
-                                    tracks: newTracks
-                                };
-
-                                // 5. Player එකට කියනවා captions on කරන්න කියලා.
-                                player.toggleCaptions(true);
-
-                                console.log("SUCCESS: උපසිරැසි Player එකට සාර්ථකව ඇතුල් කලා!");
-                            } else {
-                                console.log("No subtitles found via fetch.");
-                            }
-                        })
-                        .catch(err => console.error("උපසිරැසි ගෙන ඒමට නොහැකි විය:", err));
-                }
-                // === END: The Final Subtitle Injection ===
-
-                // 1. Auto-Rotation පහසුකම (පරණ විදියටම)
-                player.on('enterfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.lock === 'function') { screen.orientation.lock('landscape').catch(() => {}); } } catch (err) {} } });
-                player.on('exitfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.unlock === 'function') { screen.orientation.unlock(); } } catch (err) {} } });
-
-                // 2. Mobile Touch Controls (පරණ විදියටම)
-                const playerContainer = player.elements.container;
-                const rewindIndicator = document.createElement('div');
-                rewindIndicator.className = 'skip-indicator skip-indicator-rewind';
-                rewindIndicator.innerHTML = `<span class="arrows">&laquo;</span><span>10s</span>`;
-                playerContainer.appendChild(rewindIndicator);
-                const forwardIndicator = document.createElement('div');
-                forwardIndicator.className = 'skip-indicator skip-indicator-forward';
-                forwardIndicator.innerHTML = `<span class="arrows">&raquo;</span><span>10s</span>`;
-                playerContainer.appendChild(forwardIndicator);
-                let tapTimeout = null;
-                let lastTapTime = 0;
-                const DOUBLE_TAP_DELAY = 300;
-                playerContainer.addEventListener('touchend', (e) => {
-                    if (e.target.closest('.plyr__controls')) return;
-                    if (!e.changedTouches || e.changedTouches.length === 0) return;
-                    const currentTime = new Date().getTime();
-                    const tapLength = currentTime - lastTapTime;
-                    clearTimeout(tapTimeout);
-                    if (tapLength < DOUBLE_TAP_DELAY && tapLength > 0) {
-                        e.preventDefault();
-                        e.stopPropagation(); 
-                        const rect = playerContainer.getBoundingClientRect();
-                        const touchX = e.changedTouches[0].clientX;
-                        const tapPositionX = touchX - rect.left;
-                        if (tapPositionX < rect.width * 0.35) {
-                            player.rewind(10);
-                            rewindIndicator.classList.add('visible');
-                            setTimeout(() => rewindIndicator.classList.remove('visible'), 500);
-                        } else if (tapPositionX > rect.width * 0.65) {
-                            player.forward(10);
-                            forwardIndicator.classList.add('visible');
-                            setTimeout(() => forwardIndicator.classList.remove('visible'), 500);
-                        } else {
-                            player.fullscreen.toggle();
-                        }
-                        lastTapTime = 0;
-                    } else {
-                        tapTimeout = setTimeout(() => {
-                            player.togglePlay();
-                        }, DOUBLE_TAP_DELAY);
-                    }
-                    lastTapTime = currentTime;
-                });
-                const styles = `
-                    .skip-indicator { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0, 0, 0, 0.4); color: white; padding: 15px 25px; border-radius: 50px; font-family: 'Josefin Sans', sans-serif; font-size: 1.2em; opacity: 0; transition: opacity 0.3s ease-out; pointer-events: none; display: flex; flex-direction: column; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-                    .skip-indicator.visible { opacity: 1; }
-                    .skip-indicator .arrows { font-size: 2.5em; line-height: 1; font-weight: bold; }
-                    .skip-indicator-rewind { left: 10%; } .skip-indicator-forward { right: 10%; }
-                `;
-                const styleSheet = document.createElement("style");
-                styleSheet.innerText = styles;
-                document.head.appendChild(styleSheet);
-                
-                const heading = document.getElementById('heading');
-                if (heading) {
-                    heading.textContent = 'POP Tv One';
-                    heading.style.visibility = 'visible';
-                }
-
-            } catch (error) {
-                console.error("Commando Code ක්‍රියාත්මක කිරීමේදී දෝෂයක්:", error);
+    // Player එකට අදාළ අනෙකුත් පහසුකම් (touch controls) එකතු කරන function එක
+    const attachExtraFeatures = (player) => {
+        player.on('enterfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.lock === 'function') { screen.orientation.lock('landscape').catch(() => {}); } } catch (err) {} } });
+        player.on('exitfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.unlock === 'function') { screen.orientation.unlock(); } } catch (err) {} } });
+        const playerContainer = player.elements.container;
+        const rewindIndicator = document.createElement('div');
+        rewindIndicator.className = 'skip-indicator skip-indicator-rewind';
+        rewindIndicator.innerHTML = `<span class="arrows">&laquo;</span><span>10s</span>`;
+        playerContainer.appendChild(rewindIndicator);
+        const forwardIndicator = document.createElement('div');
+        forwardIndicator.className = 'skip-indicator skip-indicator-forward';
+        forwardIndicator.innerHTML = `<span class="arrows">&raquo;</span><span>10s</span>`;
+        playerContainer.appendChild(forwardIndicator);
+        let tapTimeout = null;
+        let lastTapTime = 0;
+        const DOUBLE_TAP_DELAY = 300;
+        playerContainer.addEventListener('touchend', (e) => {
+            if (e.target.closest('.plyr__controls')) return;
+            if (!e.changedTouches || e.changedTouches.length === 0) return;
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTapTime;
+            clearTimeout(tapTimeout);
+            if (tapLength < DOUBLE_TAP_DELAY && tapLength > 0) {
+                e.preventDefault(); e.stopPropagation();
+                const rect = playerContainer.getBoundingClientRect();
+                const touchX = e.changedTouches[0].clientX;
+                const tapPositionX = touchX - rect.left;
+                if (tapPositionX < rect.width * 0.35) { player.rewind(10); rewindIndicator.classList.add('visible'); setTimeout(() => rewindIndicator.classList.remove('visible'), 500); }
+                else if (tapPositionX > rect.width * 0.65) { player.forward(10); forwardIndicator.classList.add('visible'); setTimeout(() => forwardIndicator.classList.remove('visible'), 500); }
+                else { player.fullscreen.toggle(); }
+                lastTapTime = 0;
+            } else {
+                tapTimeout = setTimeout(() => { player.togglePlay(); }, DOUBLE_TAP_DELAY);
             }
-        }
-    }, 100);
+            lastTapTime = currentTime;
+        });
+        const styles = `.skip-indicator { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0, 0, 0, 0.4); color: white; padding: 15px 25px; border-radius: 50px; font-family: 'Josefin Sans', sans-serif; font-size: 1.2em; opacity: 0; transition: opacity 0.3s ease-out; pointer-events: none; display: flex; flex-direction: column; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); } .skip-indicator.visible { opacity: 1; } .skip-indicator .arrows { font-size: 2.5em; line-height: 1; font-weight: bold; } .skip-indicator-rewind { left: 10%; } .skip-indicator-forward { right: 10%; }`;
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = styles;
+        document.head.appendChild(styleSheet);
+        document.getElementById('heading').style.visibility = 'visible';
+    };
+
+    // --- ප්‍රධාන ක්‍රියාන්විතය ---
+    if (fileName.toLowerCase().endsWith('.mkv')) {
+        console.log("MKV ගොනුවක් හඳුනාගත්තා. උපසිරැසි සොයමින්...");
+        fetch(`/subtitles/${fileUrl.split('/').pop()}`)
+            .then(response => response.json())
+            .then(subtitles => {
+                let tracks = [];
+                if (subtitles && subtitles.length > 0) {
+                    console.log("උපසිරැසි හමුවුනා:", subtitles);
+                    tracks = subtitles.map((sub, i) => ({
+                        kind: 'subtitles',
+                        label: sub.label || sub.language.toUpperCase(),
+                        srclang: sub.language.substring(0, 2),
+                        src: `/subtitle/${fileUrl.split('/').pop()}?index=${sub.index}`,
+                        default: i === 0
+                    }));
+                } else {
+                    console.log("උපසිරැසි හමු නොවුනි.");
+                }
+                
+                // දැන් තමයි අපි Player එක පටන් ගන්නේ, වීඩියෝව සහ උපසිරැසි එකටම දීලා
+                const player = new Plyr(videoElement, { captions: { active: true, update: true, language: 'auto' } });
+                player.source = {
+                    type: 'video',
+                    title: fileName,
+                    sources: [{ src: fileUrl, type: 'video/mp4' }],
+                    tracks: tracks
+                };
+                attachExtraFeatures(player); // අමතර පහසුකම් එකතු කරනවා
+            })
+            .catch(err => {
+                console.error("උපසිරැසි ගෙන ඒමේදී දෝෂයක්:", err);
+                // Error එකක් ආවත්, player එක subtitles නැතුව පටන් ගන්නවා
+                const player = new Plyr(videoElement);
+                player.source = { type: 'video', title: fileName, sources: [{ src: fileUrl, type: 'video/mp4' }] };
+                attachExtraFeatures(player);
+            });
+    } else {
+        console.log("MKV නොවන ගොනුවක්. සාමාන්‍ය පරිදි Player එක පටන් ගන්නවා.");
+        // MKV නැත්නම්, කෙලින්ම player එක පටන් ගන්නවා
+        const player = new Plyr(videoElement);
+        player.source = { type: 'video', title: fileName, sources: [{ src: fileUrl, type: 'video/mp4' }] };
+        attachExtraFeatures(player);
+    }
+});
 </script>
 </html>
