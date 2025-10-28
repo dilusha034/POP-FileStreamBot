@@ -68,18 +68,19 @@ async def subtitles_json_handler(request: web.Request):
         file_id = await tg_connect.get_file_properties(db_id, multi_clients)
         temp_file_path = f"/tmp/{db_id}"
 
-        # --- වැදගත්ම සහ නිවැරදිම කොටස ---
+        # --- වැදගත්ම සහ නිවැරදිම කොටස - මෙන්න නිවැරදි කිරීම! ---
         # අපි වීඩියෝව stream කරන්න පටන් අරගෙන, 5MB ආවම නවත්තනවා.
-        streamer = tg_connect.yield_file(file_id, index)
+        # yield_file function එකට අවශ්‍ය සියලුම arguments 7ම අපි දැන් දෙනවා.
+        chunk_size = 5 * 1024 * 1024 # 5MB
+        streamer = tg_connect.yield_file(file_id, index, 0, 0, chunk_size, 1, chunk_size)
         
         bytes_downloaded = 0
-        limit = 5 * 1024 * 1024  # 5MB
         
         async with aiofiles.open(temp_file_path, "wb") as f:
             async for chunk in streamer:
                 await f.write(chunk)
                 bytes_downloaded += len(chunk)
-                if bytes_downloaded >= limit:
+                if bytes_downloaded >= chunk_size:
                     # 5MB download උනාම, stream එක නවත්තනවා
                     break
         
