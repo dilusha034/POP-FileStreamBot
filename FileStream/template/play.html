@@ -223,15 +223,10 @@ document.addEventListener('DOMContentLoaded', () => {
             noticeBox.classList.remove('visible');
             noticeBox.classList.add('hidden');
         });
-
-        // ==========================================================
-        // === මෙන්න අපේ අවසන්, නිරවද්‍ය සහ ජයග්‍රාහී විසඳුම! ===
-        // player එකේ වෙලාව වෙනස් වෙන හැම මොහොතකම මේක වැඩ කරනවා.
-        // ==========================================================
+        
         player.on('timeupdate', () => {
-            // මේක පළවෙනි play එකද? සහ player එකේ වෙලාව බිංදුවට වඩා වැඩිද?
             if (isFirstPlay && player.currentTime > 0) {
-                isFirstPlay = false; // ආයෙත් මේක වැඩ නොකරන්න flag එක වෙනස් කරනවා
+                isFirstPlay = false;
                 
                 if (fileName.toLowerCase().endsWith('.mkv')) {
                     noticeBox.classList.remove('hidden');
