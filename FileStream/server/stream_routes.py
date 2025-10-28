@@ -52,7 +52,7 @@ async def watch_handler(request: web.Request):
 
 # --- START: මෙතනින් තමයි ලොකුම වෙනස පටන් ගන්නේ ---
 
-# --- උපසිරැසි තොරතුරු ලබාදෙන, වේගය වැඩි කල Route එක ---
+# --- උපසිරැසි තොරතුරු ලබාදෙන, උපරිම වේගය සඳහා Fine-Tune කල Route එක ---
 @routes.get("/subtitles/{db_id}")
 async def subtitles_json_handler(request: web.Request):
     try:
@@ -68,13 +68,13 @@ async def subtitles_json_handler(request: web.Request):
         file_id = await tg_connect.get_file_properties(db_id, multi_clients)
         temp_file_path = f"/tmp/{db_id}"
 
-        # --- මෙන්න අපේ වේගය වැඩි කිරීමේ මෙහෙයුම ---
+        # --- මෙන්න අපේ අවසන් වේගවත් කිරීමේ මෙහෙයුම ---
         
         chunk_size = 1024 * 1024 
         
-        # --- අපි වෙනස් කරන එකම එක පේළිය! ---
-        # 5MB වෙනුවට දැන් අපි 2MB ක් විතරක් download කරනවා.
-        total_bytes_to_download = 2 * 1024 * 1024 # 5MB සිට 2MB දක්වා අඩු කළා
+        # --- අපි වෙනස් කරන එකම එක ඉලක්කම! ---
+        # 2MB වෙනුවට දැන් අපි 1MB ක් විතරක් download කරනවා.
+        total_bytes_to_download = 1 * 1024 * 1024 # 2MB සිට 1MB දක්වා අඩු කළා
 
         parts_to_fetch = math.ceil(total_bytes_to_download / chunk_size)
 
