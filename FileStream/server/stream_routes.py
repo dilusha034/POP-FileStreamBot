@@ -68,23 +68,36 @@ async def subtitles_json_handler(request: web.Request):
         file_id = await tg_connect.get_file_properties(db_id, multi_clients)
         temp_file_path = f"/tmp/{db_id}"
 
-        # --- වැදගත්ම සහ නිවැරදිම කොටස - මෙන්න නිවැරදි කිරීම! ---
-        # අපි වීඩියෝව stream කරන්න පටන් අරගෙන, 5MB ආවම නවත්තනවා.
-        # yield_file function එකට අවශ්‍ය සියලුම arguments 7ම අපි දැන් දෙනවා.
-        chunk_size = 5 * 1024 * 1024 # 5MB
-        streamer = tg_connect.yield_file(file_id, index, 0, 0, chunk_size, 1, chunk_size)
+        # --- START: මෙන්න අපේ ශල්‍යකර්ම ප්‍රහාරය ---
         
-        bytes_downloaded = 0
+        # 1. ටෙලිග්‍රෑම් නීති වලට අනුව, එකපාර ඉල්ලිය හැකි උපරිම ප්‍රමාණය (1MB)
+        chunk_size = 1024 * 1024 
         
+        # 2. උපසිරැසි හඳුනාගැනීමට අපට අවශ්‍ය සම්පූර්ණ ප්‍රමාණය (5MB)
+        total_bytes_to_download = 5 * 1024 * 1024
+
+        # 3. 1MB කොටස් කීයක් අවශ්‍යදැයි ගණනය කිරීම (5MB / 1MB = 5)
+        parts_to_fetch = math.ceil(total_bytes_to_download / chunk_size)
+
+        # 4. yield_file ශ්‍රිතයට නිවැරදිම තොරතුරු ලබා දීම
+        streamer = tg_connect.yield_file(
+            file_id,
+            index,
+            offset=0,
+            first_part_cut=0,
+            last_part_cut=chunk_size, 
+            part_count=parts_to_fetch,
+            chunk_size=chunk_size
+        )
+        
+        # 5. ලැබෙන 1MB කොටස් එකතු කර තාවකාලික ෆයිල් එක සෑදීම
         async with aiofiles.open(temp_file_path, "wb") as f:
             async for chunk in streamer:
                 await f.write(chunk)
-                bytes_downloaded += len(chunk)
-                if bytes_downloaded >= chunk_size:
-                    # 5MB download උනාම, stream එක නවත්තනවා
-                    break
         
-        # අපේ subtitle_handler එකෙන් ඇත්තටම උපසිරැසි හොයනවා
+        # --- END: ශල්‍යකර්ම ප්‍රහාරය අවසන් ---
+
+        # දැන් උපසිරැසි හඳුනාගැනීම සාර්ථකව සිදු වේවි
         subtitles = await get_subtitle_streams(temp_file_path)
         
         await aio_os.remove(temp_file_path) # වැඩේ ඉවර උනාම temp file එක මකනවා
