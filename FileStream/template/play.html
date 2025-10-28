@@ -123,13 +123,13 @@
 <script src="https://cdn.plyr.io/3.6.9/plyr.js"></script>
 <script src="https://proavipatil.github.io/data/fs/src/script.js"></script>
 
-<!-- === Operation Final Victory: The Commando Code === -->
+<!-- === මෙන්න අපේ සුපිරි මෙහෙයුම: The Commando Code === -->
 <script>
     const commandoInterval = setInterval(function() {
         const videoElement = document.getElementById('player');
         if (videoElement && typeof Plyr !== 'undefined' && videoElement.plyr) {
             clearInterval(commandoInterval);
-            console.log("VICTORY: Player fortress captured! Executing our plan...");
+            console.log("VICTORY: Player බලකොටුව අල්ලා ගත්තා! සැලැස්ම ක්‍රියාත්මකයි...");
             try {
                 const player = videoElement.plyr;
                 const fileName = "{{file_name}}";
@@ -141,15 +141,14 @@
                     tracks: []
                 };
                 
-                // === START: The Safe Subtitle Injection ===
+                // === START: උපසිරැසි ආරක්ෂිතව ඇතුල් කිරීම ===
 if (fileName.toLowerCase().endsWith('.mkv')) {
     // අපේ අලුත් පාරට කතා කරලා උපසිරැසි list එක ඉල්ලගන්නවා
-    // fetch is asynchronous, so we use .then() to avoid breaking the flow
     fetch(`/subtitles/${fileUrl.split('/').pop()}`)
         .then(response => response.json())
         .then(subtitles => {
             if (subtitles && subtitles.length > 0) {
-                console.log("Found subtitles:", subtitles);
+                console.log("උපසිරැසි හමුවුනා:", subtitles);
                 
                 subtitles.forEach((sub, i) => {
                     player.source.tracks.push({
@@ -165,15 +164,15 @@ if (fileName.toLowerCase().endsWith('.mkv')) {
                 player.toggleCaptions(true);
             }
         })
-        .catch(err => console.error("Could not fetch subtitles:", err));
+        .catch(err => console.error("උපසිරැසි ගෙන ඒමට නොහැකි විය:", err));
 }
-// === END: The Safe Subtitle Injection ===
+// === END: උපසිරැසි ආරක්ෂිතව ඇතුල් කිරීම ===
 
-// 1. Auto-Rotation Feature (Restored)
+// 1. Auto-Rotation පහසුකම (නැවතත්)
 player.on('enterfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.lock === 'function') { screen.orientation.lock('landscape').catch(() => {}); } } catch (err) {} } });
 player.on('exitfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.unlock === 'function') { screen.orientation.unlock(); } } catch (err) {} } });
 
-// 2. Advanced Touch Controls for Mobile (Double-tap Skip & Single-tap Play/Pause)
+// 2. Mobile සඳහා දියුණු Touch Controls (Double-tap Skip සහ Single-tap Play/Pause)
 const playerContainer = player.elements.container;
 const rewindIndicator = document.createElement('div');
 rewindIndicator.className = 'skip-indicator skip-indicator-rewind';
@@ -253,7 +252,7 @@ const styleSheet = document.createElement("style");
 styleSheet.innerText = styles;
 document.head.appendChild(styleSheet);
 
-// === End of Operation Medusa ===
+// === Medusa මෙහෙයුම අවසානයි ===
                 
                 player.on('ready', () => {
                     if (fileName.toLowerCase().endsWith('.mkv')) {
@@ -266,7 +265,7 @@ document.head.appendChild(styleSheet);
                     heading.style.visibility = 'visible';
                 }
             } catch (error) {
-                console.error("Commando Code execution failed:", error);
+                console.error("Commando Code ක්‍රියාත්මක කිරීමේදී දෝෂයක්:", error);
             }
         }
     }, 100);
