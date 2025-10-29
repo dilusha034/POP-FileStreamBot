@@ -210,52 +210,72 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileUrl = "{{file_url}}";
     const videoElement = document.getElementById('player');
 
-    // === START: "පාවෙන දැනුම්දීම" සඳහා අවශ්‍ය දේවල් ===
+    // === START: "බුද්ධිමත් ටයිමරය" සඳහා අවශ්‍ය දේවල් ===
     const noticeBox = document.getElementById('floating-notice');
     const timerElement = document.getElementById('countdown-timer');
     const closeBtn = document.getElementById('notice-close-btn');
-    let countdownInterval = null;
-
+    
     const attachNoticeLogic = (player) => {
-        closeBtn.addEventListener('click', () => {
+        let countdownInterval = null; // Timer එක පාලනය කරන්න
+        let timeLeft = 60; // ඉතුරු වෙලාව මතක තියාගන්න
+        let noticeHasBeenShown = false; // Notice එක එක පාරයි පෙන්වන්නේ
+        let isNoticeActive = true; // User close කලොත් මේක false වෙනවා
+
+        // Countdown එක පටන් ගන්න function එක
+        const startCountdown = () => {
+            // පරණ timer එකක් run වෙනවනම් ඒක නවත්වනවා
+            clearInterval(countdownInterval); 
+            // අලුත් timer එකක් පටන් ගන්නවා
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    closeBtn.click();
+                }
+            }, 1000);
+        };
+
+        // Countdown එක නවත්වන function එක
+        const pauseCountdown = () => {
             clearInterval(countdownInterval);
+        };
+
+        // Close button එක click කලොත්
+        closeBtn.addEventListener('click', () => {
+            isNoticeActive = false; // Notice එක අක්‍රිය කරනවා
+            pauseCountdown();
             noticeBox.classList.remove('visible');
             noticeBox.classList.add('hidden');
         });
 
         // ==========================================================
-        // === මෙන්න අපේ අවසන්, නිරවද්‍ය සහ ජයග්‍රාහී විසඳුම! ===
-        // Player එකේ size එක වෙනස් වෙනකොට වැඩ කරන්න ResizeObserver එකක් හදනවා
+        // === මෙන්න අපේ බුද්ධිමත් මොළය! ===
         // ==========================================================
-        const observer = new ResizeObserver((entries) => {
-            // Player එකේ size එක වෙනස් වුනාම මේක වැඩ කරනවා
-            // MKV file එකක් නම් විතරක් අපේ මායාව පටන් ගමු
-            if (fileName.toLowerCase().endsWith('.mkv')) {
+
+        // 1. වීඩියෝව ඇත්තටම play වෙන්න ගත්තම (buffer වෙලා ඉවරවෙලා)
+        player.on('playing', () => {
+            if (!isNoticeActive) return; // User close කරලනම් මුකුත් කරන්න එපා
+
+            // Notice එක කලින් පෙන්නලා නැත්නම් විතරක් පෙන්නන්න
+            if (!noticeHasBeenShown && fileName.toLowerCase().endsWith('.mkv')) {
+                noticeHasBeenShown = true;
                 noticeBox.classList.remove('hidden');
                 noticeBox.classList.add('visible');
-                let timeLeft = 60;
-                timerElement.textContent = timeLeft;
-                
-                countdownInterval = setInterval(() => {
-                    timeLeft--;
-                    timerElement.textContent = timeLeft;
-                    if (timeLeft <= 0) {
-                        clearInterval(countdownInterval);
-                        closeBtn.click();
-                    }
-                }, 1000);
-
-                // අපේ වැඩේ ඉවරයි, ඒ නිසා ආයෙත් size එක වෙනස් වුනොත් වැඩ නොකරන්න observer එක නවත්වනවා
-                observer.disconnect();
             }
+            
+            // Countdown එක පටන් ගන්න / ආයෙත් පටන් ගන්න
+            startCountdown();
         });
 
-        // Player එකේ container එකේ size එක වෙනස් වෙනවද කියලා බලාගෙන ඉන්න කියනවා
-        // මේක තමයි buffer වෙනකොට කුඩාවට ඉඳලා, play වෙනකොට ලොකු වෙන element එක
-        observer.observe(player.elements.container);
+        // 2. වීඩියෝව Pause කලොත්
+        player.on('pause', () => {
+            if (!isNoticeActive) return; // User close කරලනම් මුකුත් කරන්න එපා
+            // Countdown එක නවත්වන්න
+            pauseCountdown();
+        });
     };
-    // === END: "පාවෙන දැනුම්දීම" සඳහා අවශ්‍ය දේවල් ===
-
+    // === END: "බුද්ධිමත් ටයිමරය" සඳහා අවශ්‍ය දේවල් ===
 
     const attachExtraFeatures = (player) => {
         // ඔයාගේ මේ function එකේ එක අකුරක්වත් වෙනස් කරලා නෑ
