@@ -131,35 +131,28 @@
 <!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (අවසාන සහ නිරවද්‍ය කේතය) === -->
 <!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (අවසාන සහ නිරවද්‍ය කේතය) === -->
 <!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (අවසාන සහ පරිපූර්ණ කේතය) === -->
+<!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (අවසාන සහ ස්ථිර විසඳුම) === -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const fileName = "{{file_name}}";
     const fileUrl = "{{file_url}}";
     const videoElement = document.getElementById('player');
 
-    // === START: "සංඥා බිඳවැටීම" මෙහෙයුම (ඔබගේ නව අදහස අනුව වැඩි දියුණු කරන ලදී) ===
     const attachSubtitleLoadingLogic = (player) => {
-        // MKV ෆයිල් එකක් නෙවෙයි නම්, මේ කිසිම දෙයක් කරන්න එපා.
-        if (!fileName.toLowerCase().endsWith('.mkv')) {
-            return;
-        }
+        if (!fileName.toLowerCase().endsWith('.mkv')) return;
 
-        // Player එක ඇතුලේ පෙන්නන Message Box එක හදනවා (වෙනසක් නෑ)
         const overlay = document.createElement('div');
         overlay.className = 'subtitle-status-overlay';
         overlay.innerHTML = `<span>උපසිරැසි සකසමින් පවතී...</span>`;
         player.elements.container.appendChild(overlay);
 
-        // මේ Box එකට අවශ්‍ය CSS ටික හදනවා (වෙනසක් නෑ)
         const overlayStyles = `
             .subtitle-status-overlay {
-                position: absolute; top: 50%; left: 50%;
-                transform: translate(-50%, -50%);
-                background-color: rgba(0, 0, 0, 0.6);
-                color: white; padding: 15px 25px; border-radius: 10px;
-                font-family: 'Josefin Sans', sans-serif; font-size: 1.1em;
+                position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                background-color: rgba(0, 0, 0, 0.6); color: white; padding: 15px 25px;
+                border-radius: 10px; font-family: 'Josefin Sans', sans-serif; font-size: 1.1em;
                 z-index: 50; opacity: 0; visibility: hidden;
-                transition: opacity 0.3s, visibility: 0.3s;
+                transition: opacity 0.3s, visibility 0.3s;
                 backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
             }
             .subtitle-status-overlay.visible { opacity: 1; visibility: visible; }
@@ -168,40 +161,26 @@ document.addEventListener('DOMContentLoaded', () => {
         styleSheet.innerText = overlayStyles;
         document.head.appendChild(styleSheet);
         
-        // **මෙන්න වැදගත්ම නිවැරදි කිරීම:**
-        // User, play button එක මුලින්ම ඔබපු ගමන්...
         player.once('play', () => {
-            
-            // තත්පර 5කින් වීඩියෝ එක pause කරන්න timer එක පටන් ගන්නවා
             setTimeout(() => {
-                // user ඒ අතරතුර වෙන දෙයක් (pause, seek) කරලා තිබුනොත්, අපි මැදිහත් වෙන්නේ නෑ
-                if (player.paused || player.seeking) {
-                    return;
-                }
+                if (player.paused || player.seeking) return;
                 
                 player.pause();
                 overlay.classList.add('visible');
 
-                // --- ඔබගේ අදහස ක්‍රියාත්මක කිරීම ---
                 const resumePlayback = () => {
-                    overlay.classList.remove('visible'); // Message එක අයින් කරනවා
-                    player.play(); // වීඩියෝ එක play කරනවා
+                    overlay.classList.remove('visible');
+                    player.play();
                 };
 
-                // අපි දැන් බලනවා වීඩියෝ එකේ දත්ත (duration) දැනටමත් load වෙලාද කියලා
-                // (සමහරවිට connection එක වේගවත් නම්, තත්පර 5ට කලින් load වෙන්න පුළුවන්)
                 if (player.duration > 0) {
-                    // එහෙම load වෙලා නම්, කෙලින්ම play කරනවා
                     resumePlayback();
                 } else {
-                    // නැත්නම්, player එක 'loadedmetadata' කියන signal එක එවනකල් එක පාරක් බලාගෙන ඉන්නවා
                     player.once('loadedmetadata', resumePlayback);
                 }
-
-            }, 5000); // තත්පර 5ක් play වෙන්න දෙනවා
+            }, 5000);
         });
     };
-    // === END: "සංඥා බිඳවැටීම" මෙහෙයුම ===
 
     const attachExtraFeatures = (player) => {
         player.on('enterfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.lock === 'function') { screen.orientation.lock('landscape').catch(() => {}); } } catch (err) {} } });
@@ -245,40 +224,48 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('heading').style.visibility = 'visible';
     };
 
-    // --- ප්‍රධාන කේතය (වෙනසක් නෑ) ---
+    // --- ප්‍රධාන කේතය (නිවැරදි කරන ලද) ---
+    const initializePlayer = (tracks = []) => {
+        const player = new Plyr(videoElement, { captions: { active: true, update: true, language: 'auto' } });
+
+        // **මෙන්න වැදගත්ම වෙනස:**
+        // අපි player එක 'ready' වෙනකල් ඉඳලා, ඊට පස්සේ තමයි අපේ වැඩ ටික පටන් ගන්නේ
+        player.on('ready', event => {
+            attachExtraFeatures(player);
+            attachSubtitleLoadingLogic(player);
+        });
+
+        player.source = {
+            type: 'video',
+            title: fileName,
+            sources: [{ src: fileUrl, type: 'video/mp4' }],
+            tracks: tracks
+        };
+    };
+
     if (fileName.toLowerCase().endsWith('.mkv')) {
         fetch(`/subtitles/${fileUrl.split('/').pop()}`)
             .then(response => response.json())
             .then(subtitles => {
-                let tracks = [];
-                if (subtitles && subtitles.length > 0) {
-                    tracks = subtitles.map((sub, i) => ({
-                        kind: 'subtitles',
-                        label: sub.label || sub.language.toUpperCase(),
-                        srclang: sub.language.substring(0, 2),
-                        src: `/subtitle/${fileUrl.split('/').pop()}?index=${sub.index}`,
-                        default: i === 0
-                    }));
-                }
-                const player = new Plyr(videoElement, { captions: { active: true, update: true, language: 'auto' } });
-                player.source = {
-                    type: 'video',
-                    title: fileName,
-                    sources: [{ src: fileUrl, type: 'video/mp4' }],
-                    tracks: tracks
-                };
-                attachExtraFeatures(player);
-                attachSubtitleLoadingLogic(player);
+                const tracks = (subtitles && subtitles.length > 0) ? subtitles.map((sub, i) => ({
+                    kind: 'subtitles',
+                    label: sub.label || sub.language.toUpperCase(),
+                    srclang: sub.language.substring(0, 2),
+                    src: `/subtitle/${fileUrl.split('/').pop()}?index=${sub.index}`,
+                    default: i === 0
+                })) : [];
+                initializePlayer(tracks);
             })
             .catch(err => {
-                const player = new Plyr(videoElement);
-                player.source = { type: 'video', title: fileName, sources: [{ src: fileUrl, type: 'video/mp4' }] };
-                attachExtraFeatures(player);
+                initializePlayer(); // Subtitle fetch කරන්න බැරි වුනත් player එක හදනවා
             });
     } else {
+        // MKV නොවන ෆයිල් වලට Subtitle logic එක අවශ්‍යම නෑ
         const player = new Plyr(videoElement);
+        player.on('ready', event => {
+            attachExtraFeatures(player);
+        });
         player.source = { type: 'video', title: fileName, sources: [{ src: fileUrl, type: 'video/mp4' }] };
-        attachExtraFeatures(player);
     }
 });
 </script>
