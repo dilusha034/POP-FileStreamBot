@@ -134,7 +134,7 @@ This project is a customized fork of the original **[FileStreamBot](https://gith
 -   [**AvishkarPatil (avipatilpro)**](https://github.com/AvishkarPatil) - For the original bot.
 -   [**Deekshith SH**](https://github.com/DeekshithSH) - For modules.
 -   [**EverythingSuckz**](https://github.com/EverythingSuckz) - For his version of FileStreamBot.
--   [**Biisal**](https://github.com/biisal) - For the Stream Page UI.
+-   [**Biisal**](https://github.com/biisal) - For the Stream Page UI..
 
 ---
 
