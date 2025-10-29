@@ -1,3 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POP Tv One | {{file_name}}</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/dilusha034/FileStreamBot/main/photo_2025-09-24_00-54-09.jpg?v=2" type="image/x-icon">
+    <link rel="shortcut icon" href="https://raw.githubusercontent.com/dilusha034/FileStreamBot/main/photo_2025-09-24_00-54-09.jpg?v=2" type="image/x-icon">
+    <link rel="stylesheet" href="https://unpkg.com/sheryjs/dist/Shery.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/proavipatil/data@main/fs/src/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/proavipatil/data@main/fs/src/plyr.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #floating-notice {
+            position: fixed; /* මේක තමයි පාවෙන effect එක දෙන්නේ */
+            top: 80px; /* උඩ ඉඳන් ඉඩ */
+            right: 20px; /* දකුණේ ඉඳන් ඉඩ */
+            width: 280px; /* පළල */
+            background: rgba(40, 42, 54, 0.9);
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #44475a;
+            font-family: 'Josefin Sans', sans-serif;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 9999; /* හැමදේටම උඩින් තියෙන්න */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transform: translateX(120%); /* මුලින් දකුණටම කරලා හංගනවා */
+            transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        #floating-notice.visible {
+            transform: translateX(0); /* ලස්සනට ඇතුලට එන්න */
+        }
+        
+        #floating-notice.hidden { /* JS එකෙන් මේ class එක දාපුවම ආයෙත් යනවා */
+            transform: translateX(120%);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #bd93f9;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        .notice-header {
+            display: flex;
+            align-items: center;
+            font-size: 1em;
+            font-weight: 700;
+            color: #ffb86c;
+            margin-bottom: 10px;
+        }
+        .notice-header svg { margin-right: 8px; }
+        .main-text {
+             font-size: 0.9em; margin-bottom: 5px; text-align: center;
+        }
+        .timer-display {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #50fa7b;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .warning-text {
+            font-size: 0.8em;
+            color: #ff79c6;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- === START: මෙහෙයුම "පාවෙන දැනුම්දීම" === -->
+<div id="floating-notice" class="hidden">
+    <button id="notice-close-btn" class="close-btn">&times;</button>
+    <div class="notice-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-7v2h2v-2h-2zm0-8v6h2V7h-2z"></path></svg>
+        <span>ඔබගේ අවධානයට</span>
+    </div>
+    <p class="main-text">උපසිරැසි සූදානම් වෙමින් පවතී...</p>
+    <div class="timer-display">
+        <span id="countdown-timer">60</span>
+    </div>
+    <p class="warning-text">Skip කළහොත් උපසිරැසි නොපෙන්වයි.</p>
+</div>
+<!-- === END: මෙහෙයුම "පාවෙන දැනුම්දීම" === -->
+    <nav>
+        <div class="nleft">
+            <a href="#">
+                <h3 id="heading" style="z-index: 100; visibility: hidden;" class="magnet title">POP Tv One</h3>
+            </a>
+        </div>
+        <div class="nryt">
+            <a class="home-btn magnet" href="#main" onclick="toggleWidthnav(this)">මුල් පිටුව</a>
+            <a href="#abtus" class="about-btn magnet" onclick="toggleWidthnav(this)">අපි ගැන</a>
+        </div>
+    </nav>
+    <center>
+        <div class="about-nav">
+            <a href="#abtus" class="wlcm magnet" onclick="toggleWidth(this)">පිළිගැනීම</a>
+            <a href="#channels" class="abt-chnl magnet" onclick="toggleWidth(this)">අපේ චැනල්</a>
+            <a href="#contact" class="magnet contact-btn" onclick="toggleWidth(this)">සම්බන්ධ වන්න</a>
+        </div>
+    </center>
+   <div class="outer">
+        <div class="inner">
+            <div class="main" id="main">
+                <!-- අපි video src එක මෙතනින් ඉවත් කරනවා. JavaScript එකෙන් පාලනය කරන්න. -->
+                <video id="player" playsinline controls width="100%"></video>
+                <div class="file-name">
+                    <h4 style="display: inline;">ගොනුවේ නම: </h4>
+                    <p style="display: inline;" id="myDiv">{{file_name}}</p><br>
+                    <h4 style="display: inline;">ගොනුවේ ප්‍රමාණය: </h4>
+                    <p style="display: inline;">{{file_size}}</p>
+                </div>
+                <div class="downloadBtn">
+                    <button class="magnet" onclick="streamDownload()">
+                        <img style="height: 30px;" src="https://i.ibb.co/RjzYttX/dl.png" alt="">බාගත කරන්න
+                    </button>
+                    <button class="magnet" onclick="copyStreamLink()">
+                        <img src="https://i.ibb.co/CM4Y586/link.png" alt="Copy Link">ලින්ක් එක කොපි කරන්න
+                    </button>
+                    <button class="magnet" onclick="vlc_player()">
+                        <img src="https://i.ibb.co/px6fQs1/vlc.png" alt="">VLC Player
+                    </button>
+                    <button class="magnet" onclick="mx_player()">
+                        <img src="https://i.ibb.co/41WvtQ3/mx.png" alt="">MX Player
+                    </button>
+                    <button class="magnet" onclick="n_player()">
+                        <img src="https://i.ibb.co/Hd2dS4t/nPlayer.png" alt="">nPlayer
+                    </button>
+                </div>
+            </div>
+            <div class="abt">
+                <div class="about">
+                    <div class="about-dets">
+                        <div class="abt-sec" id="abtus" style="padding: 160px 30px;">
+                            <h1 style="text-align: center;">POP TV ONE වෙත <Span>සාදරයෙන්</Span> පිළිගනිමු</h1>
+                            <p style="text-align: center; line-height: 2;word-spacing: 2px;  letter-spacing: 0.8px;">
+                                මෙය POP Tv One හි නිල චිත්‍රපට සහ කතා මාලා නැරඹීමේ පිටුවයි. ඔබට අවශ්‍ය නම් මෙතනින් කෙලින්ම නැරඹීමට හෝ බාගත කිරීමට හැකිය. 
+                                <br><br>ඔබ මෙම සේවාවට කැමති නම්, ඔබේ මිතුරන් සමගද බෙදාගැනීමට අමතක කරන්න එපා!
+                            </p>
+                        </div>
+                        <div class="abt-sec" id="channels">
+                            <h1>අපේ <span>TELEGRAM</span> චැනල්</h1>
+                            <div class="links chnl-link">
+                                <a class="magnet" href="https://t.me/POPTvOne">
+                                    <button>POP TV ONE (Movies & TV)</button>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="abt-sec" id="contact">
+                            <p style="text-align: center;">යම් ගැටළුවක් හෝ දෝෂයක් ඇත්නම්, පහතින් අපව අමතන්න</p>
+                            <div class="links contact">
+                                <a href="https://t.me/Mr_D_2000">
+                                    <button>සම්බන්ධ වන්න (Contact)</button>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer>
+            <center>
+                <div class="movie-cont">
+                    <div class="movieSug">
+                        <div class="movieDets"></div>
+                        <div class="movieimg"><img src=""></div>
+                    </div>
+                    <div class="low-width-movie-dets">
+                        <div class="movieStsBar">
+                            <div class="movieDets-mini"></div>
+                        </div>
+                    </div>
+                    <button class="ranMovBtn" onclick="getDets()">Get More Movies Suggestion</button>
+                </div>
+            </center>
+            <center>
+                <div class="copyright">
+                    <h5 class="text-center">Copyright © 2025 <a href="https://t.me/POPTvOne"><span style="font-weight: 700;">POP Tv One</span></a>. All Rights Reserved.</h5>
+                </div>
+            </center>
+        </footer>
+    </div>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.155.0/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/automat/controlkit.js@master/bin/controlKit.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sheryjs/dist/Shery.js"></script>
+<script src="https://cdn.plyr.io/3.6.9/plyr.js"></script>
+<script src="https://proavipatil.github.io/data/fs/src/script.js"></script>
+
+<!-- === මෙහෙයුම "ප්‍රමුඛතා පාලනය" === -->
 <script>
 // පිටුව සම්පූර්ණයෙන්ම load වෙනකල් ඉන්නවා.
 document.addEventListener('DOMContentLoaded', () => {
@@ -159,3 +364,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
+</html>
