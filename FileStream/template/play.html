@@ -204,84 +204,98 @@
 
 <!-- === මෙහෙයුම "ප්‍රමුඛතා පාලනය" === -->
 <script>
-// පිටුව සම්පූර්ණයෙන්ම load වෙනකල් ඉන්නවා.
 document.addEventListener('DOMContentLoaded', () => {
     const fileName = "{{file_name}}";
     const fileUrl = "{{file_url}}";
     const videoElement = document.getElementById('player');
 
-    // === START: "ද්විත්ව විධානය" සඳහා අවශ්‍ය දේවල් ===
-    const noticeBox = document.getElementById('floating-notice');
-    const timerElement = document.getElementById('countdown-timer');
-    const closeBtn = document.getElementById('notice-close-btn');
-    
-    const attachNoticeLogic = (player) => {
-        let countdownInterval = null;
-        let timeLeft = 60;
+    // === START: "සංඥා බිඳවැටීම" මෙහෙයුම ===
+    const attachSubtitleLoadingLogic = (player) => {
+        let isFirstPlay = true; // මේක පළවෙනි play එකද කියලා බලන්න
+        let subtitleCheckInterval = null; // Subtitle check කරන එක පාලනයට
+
+        // 1. Player එක ඇතුලේ පෙන්නන Message Box එක හදනවා
+        const overlay = document.createElement('div');
+        overlay.className = 'subtitle-status-overlay';
+        overlay.innerHTML = `<span>උපසිරැසි සකසමින් පවතී...</span>`;
         
-        // මේවා තමයි අපේ control variables
-        let isPlaybackLocked = false; // Timer එක වැඩ කරනකොට play කරන්න බෑ
-        let hasMagicBeenTriggered = false; // මායාව එක පාරයි වෙන්නේ
-        let lastPlayAttemptTime = 0; // Double-tap එක අල්ලගන්න
-        const DOUBLE_TAP_THRESHOLD = 500; // මිලි තත්පර 500ක් ඇතුලත
+        // Player එකට මේ Box එක එකතු කරනවා
+        player.elements.container.appendChild(overlay);
 
-        const endTheWait = () => {
-            clearInterval(countdownInterval);
-            isPlaybackLocked = false;
-            noticeBox.classList.remove('visible');
-            noticeBox.classList.add('hidden');
+        // මේ Box එකට අවශ්‍ය CSS ටික හදනවා
+        const overlayStyles = `
+            .subtitle-status-overlay {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: rgba(0, 0, 0, 0.6);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                font-family: 'Josefin Sans', sans-serif;
+                font-size: 1.1em;
+                z-index: 50;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s, visibility 0.3s;
+                backdrop-filter: blur(5px);
+                -webkit-backdrop-filter: blur(5px);
+            }
+            .subtitle-status-overlay.visible {
+                opacity: 1;
+                visibility: visible;
+            }
+        `;
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = overlayStyles;
+        document.head.appendChild(styleSheet);
+
+
+        // 2. උපසිරැසි ඇත්තටම load වුනාද කියලා බලන function එක
+        const areSubtitlesReady = () => {
+            const tracks = player.media.textTracks;
+            if (!tracks || tracks.length === 0) return false;
+
+            for (let i = 0; i < tracks.length; i++) {
+                // 'showing' කියන්නේ ඒ track එක active වෙලා, cues පේනවා කියන එක
+                // cues.length > 0 කියන්නේ subtitle file එක load වෙලා ඉවරයි කියන එක
+                if (tracks[i].mode === 'showing' && tracks[i].cues && tracks[i].cues.length > 0) {
+                    return true;
+                }
+            }
+            return false;
         };
-
-        closeBtn.addEventListener('click', endTheWait);
-
-        // ==========================================================
-        // === මෙන්න අපේ ද්විත්ව විධාන මොළය! ===
-        // ==========================================================
-        player.on('play', () => {
-            // 1. Timer එක වැඩ කරන වෙලාවෙ user play කරන්න හැදුවොත්...
-            if (isPlaybackLocked) {
-                player.pause(); // බලෙන් නවත්වනවා
+        
+        // 3. වීඩියෝ එක play වෙන්න පටන් ගත්තම...
+        player.on('playing', () => {
+            // මේක MKV එකක් නෙවෙයි නම්, හරි කලින් මේ වැඩේ කරලා නම්, මුකුත් කරන්න එපා
+            if (!isFirstPlay || !fileName.toLowerCase().endsWith('.mkv')) {
                 return;
             }
 
-            // 2. මායාව දැනටමත් වෙලා ඉවරනම්...
-            if (hasMagicBeenTriggered || !fileName.toLowerCase().endsWith('.mkv')) {
-                return; // මුකුත් කරන්න එපා, සාමාන්‍ය විදියට play වෙන්න දෙන්න
-            }
+            // මේ වැඩේ ආයේ නොකරන්න flag එක false කරනවා
+            isFirstPlay = false;
 
-            // 3. Double-tap එක අල්ලගන්න තැන
-            const currentTime = new Date().getTime();
-            const timeSinceLastTap = currentTime - lastPlayAttemptTime;
+            // තත්පර 5කින් වීඩියෝ එක pause කරන්න timer එකක් දානවා
+            setTimeout(() => {
+                player.pause();
+                overlay.classList.add('visible'); // Message එක පෙන්වනවා
 
-            if (timeSinceLastTap < DOUBLE_TAP_THRESHOLD) {
-                // --- Double-tap එක අහු වුනා! ---
-                
-                // මායාව පටන් ගන්නවා
-                hasMagicBeenTriggered = true;
-                isPlaybackLocked = true;
-                
-                player.pause(); // වීඩියෝ එක pause කරනවා
-
-                // Notice එක පෙන්නලා timer එක පටන් ගන්නවා
-                noticeBox.classList.remove('hidden');
-                noticeBox.classList.add('visible');
-
-                timerElement.textContent = timeLeft;
-                countdownInterval = setInterval(() => {
-                    timeLeft--;
-                    timerElement.textContent = timeLeft;
-                    if (timeLeft <= 0) {
-                        endTheWait();
+                // දැන් උපසිරැසි load වෙනකල් check කරන්න පටන් ගන්නවා
+                subtitleCheckInterval = setInterval(() => {
+                    if (areSubtitlesReady()) {
+                        // හරි! උපසිරැසි load වෙලා!
+                        clearInterval(subtitleCheckInterval); // Check කරන එක නවත්වනවා
+                        overlay.classList.remove('visible'); // Message එක අයින් කරනවා
+                        player.play(); // වීඩියෝ එක play කරනවා
                     }
-                }, 1000);
+                }, 500); // හැම මිලි තත්පර 500කටම සැරයක් check කරනවා
 
-            } else {
-                // මේ පළවෙනි tap එක විතරයි. ඒ නිසා වෙලාව සටහන් කරගන්නවා.
-                lastPlayAttemptTime = currentTime;
-            }
+            }, 5000); // තත්පර 5ක් play වෙන්න දෙනවා
         });
     };
-    // === END: "ද්විත්ව විධානය" සඳහා අවශ්‍ය දේවල් ===
+    // === END: "සංඥා බිඳවැටීම" මෙහෙයුම ===
 
     const attachExtraFeatures = (player) => {
         // ඔයාගේ මේ function එකේ එක අකුරක්වත් වෙනස් කරලා නෑ
@@ -320,13 +334,13 @@ document.addEventListener('DOMContentLoaded', () => {
             lastTapTime = currentTime;
         });
         const styles = `.skip-indicator { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0, 0, 0, 0.4); color: white; padding: 15px 25px; border-radius: 50px; font-family: 'Josefin Sans', sans-serif; font-size: 1.2em; opacity: 0; transition: opacity 0.3s ease-out; pointer-events: none; display: flex; flex-direction: column; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); } .skip-indicator.visible { opacity: 1; } .skip-indicator .arrows { font-size: 2.5em; line-height: 1; font-weight: bold; } .skip-indicator-rewind { left: 10%; } .skip-indicator-forward { right: 10%; }`;
-        const styleSheet = document.createElement("style");
-        styleSheet.innerText = styles;
-        document.head.appendChild(styleSheet);
+        const extraStyleSheet = document.createElement("style");
+        extraStyleSheet.innerText = styles;
+        document.head.appendChild(extraStyleSheet);
         document.getElementById('heading').style.visibility = 'visible';
     };
 
-    // --- ඔයාගේ මුල්, වැඩ කරන කෝඩ් එක ---
+    // --- ප්‍රධාන කේතය ---
     if (fileName.toLowerCase().endsWith('.mkv')) {
         fetch(`/subtitles/${fileUrl.split('/').pop()}`)
             .then(response => response.json())
@@ -349,13 +363,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     tracks: tracks
                 };
                 attachExtraFeatures(player);
-                attachNoticeLogic(player);
+                attachSubtitleLoadingLogic(player); // අපේ අලුත් මෙහෙයුම එකතු කරනවා
             })
             .catch(err => {
                 const player = new Plyr(videoElement);
                 player.source = { type: 'video', title: fileName, sources: [{ src: fileUrl, type: 'video/mp4' }] };
                 attachExtraFeatures(player);
-                attachNoticeLogic(player);
+                // Subtitle නැති නිසා මෙතන අපේ logic එක දාන්න අවශ්‍ය නෑ
             });
     } else {
         const player = new Plyr(videoElement);
