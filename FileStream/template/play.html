@@ -14,86 +14,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        #floating-notice {
-            position: fixed; /* මේක තමයි පාවෙන effect එක දෙන්නේ */
-            top: 80px; /* උඩ ඉඳන් ඉඩ */
-            right: 20px; /* දකුණේ ඉඳන් ඉඩ */
-            width: 280px; /* පළල */
-            background: rgba(40, 42, 54, 0.9);
-            color: #f8f8f2;
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid #44475a;
-            font-family: 'Josefin Sans', sans-serif;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            z-index: 9999; /* හැමදේටම උඩින් තියෙන්න */
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            transform: translateX(120%); /* මුලින් දකුණටම කරලා හංගනවා */
-            transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        #floating-notice.visible {
-            transform: translateX(0); /* ලස්සනට ඇතුලට එන්න */
-        }
-        
-        #floating-notice.hidden { /* JS එකෙන් මේ class එක දාපුවම ආයෙත් යනවා */
-            transform: translateX(120%);
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 5px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: #bd93f9;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0;
-            line-height: 1;
-        }
-        .notice-header {
-            display: flex;
-            align-items: center;
-            font-size: 1em;
-            font-weight: 700;
-            color: #ffb86c;
-            margin-bottom: 10px;
-        }
-        .notice-header svg { margin-right: 8px; }
-        .main-text {
-             font-size: 0.9em; margin-bottom: 5px; text-align: center;
-        }
-        .timer-display {
-            font-size: 2.5em;
-            font-weight: 700;
-            color: #50fa7b;
-            text-align: center;
-            margin-bottom: 5px;
-        }
-        .warning-text {
-            font-size: 0.8em;
-            color: #ff79c6;
-            text-align: center;
-        }
+        /* මෙතන තිබුණු #floating-notice style ටික ඉවත් කර ඇත */
     </style>
 </head>
 <body>
-    <!-- === START: මෙහෙයුම "පාවෙන දැනුම්දීම" === -->
-<div id="floating-notice" class="hidden">
-    <button id="notice-close-btn" class="close-btn">&times;</button>
-    <div class="notice-header">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-7v2h2v-2h-2zm0-8v6h2V7h-2z"></path></svg>
-        <span>ඔබගේ අවධානයට</span>
-    </div>
-    <p class="main-text">උපසිරැසි සූදානම් වෙමින් පවතී...</p>
-    <div class="timer-display">
-        <span id="countdown-timer">60</span>
-    </div>
-    <p class="warning-text">Skip කළහොත් උපසිරැසි නොපෙන්වයි.</p>
-</div>
-<!-- === END: මෙහෙයුම "පාවෙන දැනුම්දීම" === -->
+    
+    <!-- "පාවෙන දැනුම්දීම" ට අදාල HTML කොටස මෙතනින් සම්පූර්ණයෙන්ම ඉවත් කර ඇත -->
+    
     <nav>
         <div class="nleft">
             <a href="#">
@@ -115,7 +42,6 @@
    <div class="outer">
         <div class="inner">
             <div class="main" id="main">
-                <!-- අපි video src එක මෙතනින් ඉවත් කරනවා. JavaScript එකෙන් පාලනය කරන්න. -->
                 <video id="player" playsinline controls width="100%"></video>
                 <div class="file-name">
                     <h4 style="display: inline;">ගොනුවේ නම: </h4>
@@ -202,7 +128,7 @@
 <script src="https://cdn.plyr.io/3.6.9/plyr.js"></script>
 <script src="https://proavipatil.github.io/data/fs/src/script.js"></script>
 
-<!-- === මෙහෙයුම "ප්‍රමුඛතා පාලනය" === -->
+<!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (අවසාන සහ නිරවද්‍ය කේතය) === -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const fileName = "{{file_name}}";
@@ -211,18 +137,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === START: "සංඥා බිඳවැටීම" මෙහෙයුම ===
     const attachSubtitleLoadingLogic = (player) => {
-        let isFirstPlay = true; // මේක පළවෙනි play එකද කියලා බලන්න
-        let subtitleCheckInterval = null; // Subtitle check කරන එක පාලනයට
+        let isFirstPlay = true; 
+        let subtitleCheckInterval = null;
 
-        // 1. Player එක ඇතුලේ පෙන්නන Message Box එක හදනවා
         const overlay = document.createElement('div');
         overlay.className = 'subtitle-status-overlay';
         overlay.innerHTML = `<span>උපසිරැසි සකසමින් පවතී...</span>`;
-        
-        // Player එකට මේ Box එක එකතු කරනවා
         player.elements.container.appendChild(overlay);
 
-        // මේ Box එකට අවශ්‍ය CSS ටික හදනවා
         const overlayStyles = `
             .subtitle-status-overlay {
                 position: absolute;
@@ -251,15 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
         styleSheet.innerText = overlayStyles;
         document.head.appendChild(styleSheet);
 
-
-        // 2. උපසිරැසි ඇත්තටම load වුනාද කියලා බලන function එක
         const areSubtitlesReady = () => {
             const tracks = player.media.textTracks;
             if (!tracks || tracks.length === 0) return false;
-
             for (let i = 0; i < tracks.length; i++) {
-                // 'showing' කියන්නේ ඒ track එක active වෙලා, cues පේනවා කියන එක
-                // cues.length > 0 කියන්නේ subtitle file එක load වෙලා ඉවරයි කියන එක
                 if (tracks[i].mode === 'showing' && tracks[i].cues && tracks[i].cues.length > 0) {
                     return true;
                 }
@@ -267,38 +184,36 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         };
         
-        // 3. වීඩියෝ එක play වෙන්න පටන් ගත්තම...
         player.on('playing', () => {
-            // මේක MKV එකක් නෙවෙයි නම්, හරි කලින් මේ වැඩේ කරලා නම්, මුකුත් කරන්න එපා
             if (!isFirstPlay || !fileName.toLowerCase().endsWith('.mkv')) {
                 return;
             }
-
-            // මේ වැඩේ ආයේ නොකරන්න flag එක false කරනවා
             isFirstPlay = false;
 
-            // තත්පර 5කින් වීඩියෝ එක pause කරන්න timer එකක් දානවා
             setTimeout(() => {
+                // වීඩියෝ එක දැනටමත් ඉවර වෙලාද, pause කරලද, error එකක් ඇවිල්ලද බලනවා.
+                // එහෙම නම්, user වෙන දෙයක් කරලා. ඒ නිසා අපි මැදට පනින්නේ නෑ.
+                if (player.ended || player.paused || player.error) {
+                    return;
+                }
+                
                 player.pause();
-                overlay.classList.add('visible'); // Message එක පෙන්වනවා
+                overlay.classList.add('visible');
 
-                // දැන් උපසිරැසි load වෙනකල් check කරන්න පටන් ගන්නවා
                 subtitleCheckInterval = setInterval(() => {
                     if (areSubtitlesReady()) {
-                        // හරි! උපසිරැසි load වෙලා!
-                        clearInterval(subtitleCheckInterval); // Check කරන එක නවත්වනවා
-                        overlay.classList.remove('visible'); // Message එක අයින් කරනවා
-                        player.play(); // වීඩියෝ එක play කරනවා
+                        clearInterval(subtitleCheckInterval);
+                        overlay.classList.remove('visible');
+                        player.play();
                     }
-                }, 500); // හැම මිලි තත්පර 500කටම සැරයක් check කරනවා
+                }, 500);
 
-            }, 5000); // තත්පර 5ක් play වෙන්න දෙනවා
+            }, 5000);
         });
     };
     // === END: "සංඥා බිඳවැටීම" මෙහෙයුම ===
 
     const attachExtraFeatures = (player) => {
-        // ඔයාගේ මේ function එකේ එක අකුරක්වත් වෙනස් කරලා නෑ
         player.on('enterfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.lock === 'function') { screen.orientation.lock('landscape').catch(() => {}); } } catch (err) {} } });
         player.on('exitfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.unlock === 'function') { screen.orientation.unlock(); } } catch (err) {} } });
         const playerContainer = player.elements.container;
@@ -363,13 +278,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     tracks: tracks
                 };
                 attachExtraFeatures(player);
-                attachSubtitleLoadingLogic(player); // අපේ අලුත් මෙහෙයුම එකතු කරනවා
+                attachSubtitleLoadingLogic(player);
             })
             .catch(err => {
                 const player = new Plyr(videoElement);
                 player.source = { type: 'video', title: fileName, sources: [{ src: fileUrl, type: 'video/mp4' }] };
                 attachExtraFeatures(player);
-                // Subtitle නැති නිසා මෙතන අපේ logic එක දාන්න අවශ්‍ය නෑ
             });
     } else {
         const player = new Plyr(videoElement);
@@ -378,4 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
-</html>
+</html>```
+
+දැන් ඔබේ කේතය සම්පූර්ණයෙන්ම පිරිසිදුයි සහ අපේ අවසාන අදහස පමණක් ක්‍රියාත්මක වෙනවා. මේක තමයි අපේ ගමනේ සාර්ථකම ප්‍රතිඵලය! 🚀
