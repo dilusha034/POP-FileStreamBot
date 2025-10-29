@@ -129,45 +129,41 @@
 <script src="https://proavipatil.github.io/data/fs/src/script.js"></script>
 
 <!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (අවසාන සහ නිරවද්‍ය කේතය) === -->
+<!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (අවසාන සහ නිරවද්‍ය කේතය) === -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const fileName = "{{file_name}}";
     const fileUrl = "{{file_url}}";
     const videoElement = document.getElementById('player');
 
-    // === START: "සංඥා බිඳවැටීම" මෙහෙයුම ===
+    // === START: "සංඥා බිඳවැටීම" මෙහෙයුම (නිවැරදි කරන ලද) ===
     const attachSubtitleLoadingLogic = (player) => {
-        let isFirstPlay = true; 
+        // MKV ෆයිල් එකක් නෙවෙයි නම්, මේ කිසිම දෙයක් කරන්න එපා.
+        if (!fileName.toLowerCase().endsWith('.mkv')) {
+            return;
+        }
+
         let subtitleCheckInterval = null;
 
+        // Player එක ඇතුලේ පෙන්නන Message Box එක හදනවා
         const overlay = document.createElement('div');
         overlay.className = 'subtitle-status-overlay';
         overlay.innerHTML = `<span>උපසිරැසි සකසමින් පවතී...</span>`;
         player.elements.container.appendChild(overlay);
 
+        // මේ Box එකට අවශ්‍ය CSS ටික හදනවා
         const overlayStyles = `
             .subtitle-status-overlay {
-                position: absolute;
-                top: 50%;
-                left: 50%;
+                position: absolute; top: 50%; left: 50%;
                 transform: translate(-50%, -50%);
                 background-color: rgba(0, 0, 0, 0.6);
-                color: white;
-                padding: 15px 25px;
-                border-radius: 10px;
-                font-family: 'Josefin Sans', sans-serif;
-                font-size: 1.1em;
-                z-index: 50;
-                opacity: 0;
-                visibility: hidden;
+                color: white; padding: 15px 25px; border-radius: 10px;
+                font-family: 'Josefin Sans', sans-serif; font-size: 1.1em;
+                z-index: 50; opacity: 0; visibility: hidden;
                 transition: opacity 0.3s, visibility 0.3s;
-                backdrop-filter: blur(5px);
-                -webkit-backdrop-filter: blur(5px);
+                backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
             }
-            .subtitle-status-overlay.visible {
-                opacity: 1;
-                visibility: visible;
-            }
+            .subtitle-status-overlay.visible { opacity: 1; visibility: visible; }
         `;
         const styleSheet = document.createElement("style");
         styleSheet.innerText = overlayStyles;
@@ -184,22 +180,22 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         };
         
-        player.on('playing', () => {
-            if (!isFirstPlay || !fileName.toLowerCase().endsWith('.mkv')) {
-                return;
-            }
-            isFirstPlay = false;
-
-            setTimeout(() => {
-                // වීඩියෝ එක දැනටමත් ඉවර වෙලාද, pause කරලද, error එකක් ඇවිල්ලද බලනවා.
-                // එහෙම නම්, user වෙන දෙයක් කරලා. ඒ නිසා අපි මැදට පනින්නේ නෑ.
-                if (player.ended || player.paused || player.error) {
+        // **මෙන්න නිවැරදි කිරීම:** 'playing' වෙනුවට, අපි 'play' event එක 'once' පාවිච්චි කරනවා
+        // 'once' කියන්නේ මේක පළවෙනි පාරට විතරක් වැඩ කරන්න කියන එක
+        player.once('play', () => {
+            
+            // තත්පර 5කින් වීඩියෝ එක pause කරන්න timer එකක් දානවා
+            const pauseTimeout = setTimeout(() => {
+                // User ඒ තත්පර 5 ඇතුලත වීඩියෝ එක pause කරලා හරි, seek කරලා හරි තිබුනොත්,
+                // අපි බලෙන් මැදිහත් වෙන්නේ නෑ.
+                if (player.paused || player.seeking) {
                     return;
                 }
                 
                 player.pause();
                 overlay.classList.add('visible');
 
+                // දැන් උපසිරැසි load වෙනකල් check කරන්න පටන් ගන්නවා
                 subtitleCheckInterval = setInterval(() => {
                     if (areSubtitlesReady()) {
                         clearInterval(subtitleCheckInterval);
@@ -208,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }, 500);
 
-            }, 5000);
+            }, 5000); // තත්පර 5ක් play වෙන්න දෙනවා
         });
     };
     // === END: "සංඥා බිඳවැටීම" මෙහෙයුම ===
