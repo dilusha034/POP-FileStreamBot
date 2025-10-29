@@ -214,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const noticeBox = document.getElementById('floating-notice');
     const timerElement = document.getElementById('countdown-timer');
     const closeBtn = document.getElementById('notice-close-btn');
-    let isFirstPlay = true;
     let countdownInterval = null;
 
     const attachNoticeLogic = (player) => {
@@ -223,30 +222,40 @@ document.addEventListener('DOMContentLoaded', () => {
             noticeBox.classList.remove('visible');
             noticeBox.classList.add('hidden');
         });
-        
-        player.on('timeupdate', () => {
-            if (isFirstPlay && player.currentTime > 0) {
-                isFirstPlay = false;
+
+        // ==========================================================
+        // === මෙන්න අපේ අවසන්, නිරවද්‍ය සහ ජයග්‍රාහී විසඳුම! ===
+        // Player එකේ size එක වෙනස් වෙනකොට වැඩ කරන්න ResizeObserver එකක් හදනවා
+        // ==========================================================
+        const observer = new ResizeObserver((entries) => {
+            // Player එකේ size එක වෙනස් වුනාම මේක වැඩ කරනවා
+            // MKV file එකක් නම් විතරක් අපේ මායාව පටන් ගමු
+            if (fileName.toLowerCase().endsWith('.mkv')) {
+                noticeBox.classList.remove('hidden');
+                noticeBox.classList.add('visible');
+                let timeLeft = 60;
+                timerElement.textContent = timeLeft;
                 
-                if (fileName.toLowerCase().endsWith('.mkv')) {
-                    noticeBox.classList.remove('hidden');
-                    noticeBox.classList.add('visible');
-                    let timeLeft = 60;
+                countdownInterval = setInterval(() => {
+                    timeLeft--;
                     timerElement.textContent = timeLeft;
-                    
-                    countdownInterval = setInterval(() => {
-                        timeLeft--;
-                        timerElement.textContent = timeLeft;
-                        if (timeLeft <= 0) {
-                            clearInterval(countdownInterval);
-                            closeBtn.click();
-                        }
-                    }, 1000);
-                }
+                    if (timeLeft <= 0) {
+                        clearInterval(countdownInterval);
+                        closeBtn.click();
+                    }
+                }, 1000);
+
+                // අපේ වැඩේ ඉවරයි, ඒ නිසා ආයෙත් size එක වෙනස් වුනොත් වැඩ නොකරන්න observer එක නවත්වනවා
+                observer.disconnect();
             }
         });
+
+        // Player එකේ container එකේ size එක වෙනස් වෙනවද කියලා බලාගෙන ඉන්න කියනවා
+        // මේක තමයි buffer වෙනකොට කුඩාවට ඉඳලා, play වෙනකොට ලොකු වෙන element එක
+        observer.observe(player.elements.container);
     };
     // === END: "පාවෙන දැනුම්දීම" සඳහා අවශ්‍ය දේවල් ===
+
 
     const attachExtraFeatures = (player) => {
         // ඔයාගේ මේ function එකේ එක අකුරක්වත් වෙනස් කරලා නෑ
@@ -326,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const player = new Plyr(videoElement);
         player.source = { type: 'video', title: fileName, sources: [{ src: fileUrl, type: 'video/mp4' }] };
         attachExtraFeatures(player);
-        attachNoticeLogic(player);
+        // MKV නැති නිසා, මෙතනට notice logic එක අවශ්‍ය නෑ
     }
 });
 </script>
