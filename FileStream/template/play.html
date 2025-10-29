@@ -210,72 +210,70 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileUrl = "{{file_url}}";
     const videoElement = document.getElementById('player');
 
-    // === START: "පරිපූර්ණ මායාව" සඳහා අවශ්‍ය දේවල් ===
+    // === START: "බලහත්කාරී විරාමය" සඳහා අවශ්‍ය දේවල් ===
     const noticeBox = document.getElementById('floating-notice');
     const timerElement = document.getElementById('countdown-timer');
     const closeBtn = document.getElementById('notice-close-btn');
     
     const attachNoticeLogic = (player) => {
-        let countdownInterval = null; // Timer එක පාලනය කරන්න
-        let timeLeft = 60; // ඉතුරු වෙලාව මතක තියාගන්න
-        let noticeHasBeenShown = false; // Notice එක එක පාරයි පෙන්වන්නේ
-        let isNoticeActive = true; // User close කලොත් මේක false වෙනවා
+        let countdownInterval = null;
+        let timeLeft = 60;
+        
+        // මේක තමයි අපේ සિકিউਰિટી ਗਾਰਡ (Security Guard). 
+        // මේක true වෙලා තියෙනකල්, කාටවත් video එක play කරන්න බෑ.
+        let isPlaybackLocked = false; 
 
-        // Countdown එක පටන් ගන්න function එක
-        const startCountdown = () => {
-            clearInterval(countdownInterval); 
-            countdownInterval = setInterval(() => {
-                timeLeft--;
-                timerElement.textContent = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(countdownInterval);
-                    closeBtn.click();
-                }
-            }, 1000);
-        };
-
-        // Countdown එක නවත්වන function එක
-        const pauseCountdown = () => {
+        // Countdown එක ඉවර වුනාම හරි, close කලොත් හරි වැඩ කරන function එක
+        const endTheWait = () => {
             clearInterval(countdownInterval);
+            isPlaybackLocked = false; // දැන් play කරන්න පුළුවන්
+            noticeBox.classList.remove('visible');
+            noticeBox.classList.add('hidden');
         };
 
         // Close button එක click කලොත්
-        closeBtn.addEventListener('click', () => {
-            isNoticeActive = false; // Notice එක අක්‍රිය කරනවා
-            pauseCountdown();
-            noticeBox.classList.remove('visible');
-            noticeBox.classList.add('hidden');
-        });
+        closeBtn.addEventListener('click', endTheWait);
 
         // ==========================================================
-        // === මෙන්න අපේ අවසාන, ජයග්‍රාහී මොළය! ===
+        // === මෙන්න අපේ මහා සැලැස්ම! ===
         // ==========================================================
 
-        // 1. Trigger එක: වීඩියෝ එකේ වෙලාව වෙනස් වෙන හැම මොහොතකම (රතු ඉර)
-        player.on('timeupdate', () => {
-            // Notice එක කලින් පෙන්නලා නැත්නම්, සහ වෙලාව 0ට වඩා වැඩි නම් විතරක්
-            if (!noticeHasBeenShown && player.currentTime > 0) {
-                if (fileName.toLowerCase().endsWith('.mkv')) {
-                    noticeHasBeenShown = true; // ආයෙත් මේක වැඩ නොකරන්න flag එක දානවා
-                    noticeBox.classList.remove('hidden');
-                    noticeBox.classList.add('visible');
-                }
+        // 1. Player එක සම්පූර්ණයෙන්ම සූදානම් වූ ගමන් (වීඩියෝවේ පළමු frame එක පෙනුන ගමන්)
+        player.on('ready', () => {
+            if (fileName.toLowerCase().endsWith('.mkv')) {
+                // වීඩියෝව බලෙන්ම නවත්වනවා
+                player.pause();
+                
+                // දැන් play කරන්න බෑ කියලා lock එක දානවා
+                isPlaybackLocked = true;
+
+                // අපේ මායාව පෙන්වනවා
+                noticeBox.classList.remove('hidden');
+                noticeBox.classList.add('visible');
+
+                // Timer එක පටන් ගන්නවා
+                timerElement.textContent = timeLeft;
+                countdownInterval = setInterval(() => {
+                    timeLeft--;
+                    timerElement.textContent = timeLeft;
+                    if (timeLeft <= 0) {
+                        endTheWait(); // විනාඩිය ඉවරයි, දැන් ඔක්කොම නිදහස්
+                    }
+                }, 1000);
             }
         });
 
-        // 2. Logic එක: වීඩියෝව Play වෙනකොට
-        player.on('playing', () => {
-            if (!isNoticeActive || !noticeHasBeenShown) return; // User close කරලනම් හරි, notice එක පෙන්නලා නැත්නම් හරි, මුකුත් කරන්න එපා
-            startCountdown(); // Countdown එක පටන් ගන්න
-        });
-
-        // 3. Logic එක: වීඩියෝව Pause කලොත්
-        player.on('pause', () => {
-            if (!isNoticeActive) return;
-            pauseCountdown(); // Countdown එක නවත්වන්න
+        // 2. User, video එක play කරන්න උත්සාහ කරන හැම වාරයකම...
+        player.on('play', () => {
+            // අපේ lock එක දාලද තියෙන්නේ කියලා බලනවා
+            if (isPlaybackLocked) {
+                // ඔව්, lock එක දාලා. ඒ නිසා ආයෙත් pause කරනවා.
+                // මේක නිසා user ට play button එක ඔබන්න බෑ.
+                player.pause();
+            }
         });
     };
-    // === END: "පරිපූර්ණ මායාව" සඳහා අවශ්‍ය දේවල් ===
+    // === END: "බලහත්කාරී විරාමය" සඳහා අවශ්‍ය දේවල් ===
 
     const attachExtraFeatures = (player) => {
         // ඔයාගේ මේ function එකේ එක අකුරක්වත් වෙනස් කරලා නෑ
