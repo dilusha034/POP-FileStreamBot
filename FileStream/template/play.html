@@ -129,9 +129,7 @@
 <script src="https://proavipatil.github.io/data/fs/src/script.js"></script>
 
 <!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (අවසාන සහ නිරවද්‍ය කේතය) === -->
-<!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (අවසාන සහ නිරවද්‍ය කේතය) === -->
-<!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (අවසාන සහ පරිපූර්ණ කේතය) === -->
-<!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (අවසාන සහ ස්ථිර විසඳුම) === -->
+<!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (ස්ථිර කාල රාමු විසඳුම) === -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const fileName = "{{file_name}}";
@@ -161,24 +159,26 @@ document.addEventListener('DOMContentLoaded', () => {
         styleSheet.innerText = overlayStyles;
         document.head.appendChild(styleSheet);
         
+        // 1. User, play button එක මුලින්ම ඔබපු ගමන්...
         player.once('play', () => {
+            
+            // 2. තත්පර 5ක් play වෙන්න දෙනවා
             setTimeout(() => {
+                // user ඒ අතරතුර වෙන දෙයක් කරලා තිබුනොත්, අපි මැදිහත් වෙන්නේ නෑ
                 if (player.paused || player.seeking) return;
                 
+                // 3. වීඩියෝ එක pause කරලා, message එක පෙන්වනවා
                 player.pause();
                 overlay.classList.add('visible');
 
-                const resumePlayback = () => {
+                // --- ඔබගේ අදහස ක්‍රියාත්මක කිරීම ---
+                // 4. හරියටම විනාඩියකින් (තත්පර 60) message එක අයින් කරලා, වීඩියෝ එක play කරනවා
+                setTimeout(() => {
                     overlay.classList.remove('visible');
                     player.play();
-                };
+                }, 60000); // 60,000 milliseconds = 60 seconds
 
-                if (player.duration > 0) {
-                    resumePlayback();
-                } else {
-                    player.once('loadedmetadata', resumePlayback);
-                }
-            }, 5000);
+            }, 5000); // 5,000 milliseconds = 5 seconds
         });
     };
 
@@ -224,12 +224,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('heading').style.visibility = 'visible';
     };
 
-    // --- ප්‍රධාන කේතය (නිවැරදි කරන ලද) ---
+    // --- ප්‍රධාන කේතය (වෙනසක් නෑ) ---
     const initializePlayer = (tracks = []) => {
         const player = new Plyr(videoElement, { captions: { active: true, update: true, language: 'auto' } });
-
-        // **මෙන්න වැදගත්ම වෙනස:**
-        // අපි player එක 'ready' වෙනකල් ඉඳලා, ඊට පස්සේ තමයි අපේ වැඩ ටික පටන් ගන්නේ
+        
         player.on('ready', event => {
             attachExtraFeatures(player);
             attachSubtitleLoadingLogic(player);
@@ -257,10 +255,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 initializePlayer(tracks);
             })
             .catch(err => {
-                initializePlayer(); // Subtitle fetch කරන්න බැරි වුනත් player එක හදනවා
+                initializePlayer();
             });
     } else {
-        // MKV නොවන ෆයිල් වලට Subtitle logic එක අවශ්‍යම නෑ
         const player = new Plyr(videoElement);
         player.on('ready', event => {
             attachExtraFeatures(player);
