@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileUrl = "{{file_url}}";
     const videoElement = document.getElementById('player');
 
-    // === START: "බුද්ධිමත් ටයිමරය" සඳහා අවශ්‍ය දේවල් ===
+    // === START: "පරිපූර්ණ මායාව" සඳහා අවශ්‍ය දේවල් ===
     const noticeBox = document.getElementById('floating-notice');
     const timerElement = document.getElementById('countdown-timer');
     const closeBtn = document.getElementById('notice-close-btn');
@@ -223,9 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Countdown එක පටන් ගන්න function එක
         const startCountdown = () => {
-            // පරණ timer එකක් run වෙනවනම් ඒක නවත්වනවා
             clearInterval(countdownInterval); 
-            // අලුත් timer එකක් පටන් ගන්නවා
             countdownInterval = setInterval(() => {
                 timeLeft--;
                 timerElement.textContent = timeLeft;
@@ -250,32 +248,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // ==========================================================
-        // === මෙන්න අපේ බුද්ධිමත් මොළය! ===
+        // === මෙන්න අපේ අවසාන, ජයග්‍රාහී මොළය! ===
         // ==========================================================
 
-        // 1. වීඩියෝව ඇත්තටම play වෙන්න ගත්තම (buffer වෙලා ඉවරවෙලා)
-        player.on('playing', () => {
-            if (!isNoticeActive) return; // User close කරලනම් මුකුත් කරන්න එපා
-
-            // Notice එක කලින් පෙන්නලා නැත්නම් විතරක් පෙන්නන්න
-            if (!noticeHasBeenShown && fileName.toLowerCase().endsWith('.mkv')) {
-                noticeHasBeenShown = true;
-                noticeBox.classList.remove('hidden');
-                noticeBox.classList.add('visible');
+        // 1. Trigger එක: වීඩියෝ එකේ වෙලාව වෙනස් වෙන හැම මොහොතකම (රතු ඉර)
+        player.on('timeupdate', () => {
+            // Notice එක කලින් පෙන්නලා නැත්නම්, සහ වෙලාව 0ට වඩා වැඩි නම් විතරක්
+            if (!noticeHasBeenShown && player.currentTime > 0) {
+                if (fileName.toLowerCase().endsWith('.mkv')) {
+                    noticeHasBeenShown = true; // ආයෙත් මේක වැඩ නොකරන්න flag එක දානවා
+                    noticeBox.classList.remove('hidden');
+                    noticeBox.classList.add('visible');
+                }
             }
-            
-            // Countdown එක පටන් ගන්න / ආයෙත් පටන් ගන්න
-            startCountdown();
         });
 
-        // 2. වීඩියෝව Pause කලොත්
+        // 2. Logic එක: වීඩියෝව Play වෙනකොට
+        player.on('playing', () => {
+            if (!isNoticeActive || !noticeHasBeenShown) return; // User close කරලනම් හරි, notice එක පෙන්නලා නැත්නම් හරි, මුකුත් කරන්න එපා
+            startCountdown(); // Countdown එක පටන් ගන්න
+        });
+
+        // 3. Logic එක: වීඩියෝව Pause කලොත්
         player.on('pause', () => {
-            if (!isNoticeActive) return; // User close කරලනම් මුකුත් කරන්න එපා
-            // Countdown එක නවත්වන්න
-            pauseCountdown();
+            if (!isNoticeActive) return;
+            pauseCountdown(); // Countdown එක නවත්වන්න
         });
     };
-    // === END: "බුද්ධිමත් ටයිමරය" සඳහා අවශ්‍ය දේවල් ===
+    // === END: "පරිපූර්ණ මායාව" සඳහා අවශ්‍ය දේවල් ===
 
     const attachExtraFeatures = (player) => {
         // ඔයාගේ මේ function එකේ එක අකුරක්වත් වෙනස් කරලා නෑ
@@ -355,7 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const player = new Plyr(videoElement);
         player.source = { type: 'video', title: fileName, sources: [{ src: fileUrl, type: 'video/mp4' }] };
         attachExtraFeatures(player);
-        // MKV නැති නිසා, මෙතනට notice logic එක අවශ්‍ය නෑ
     }
 });
 </script>
