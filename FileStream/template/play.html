@@ -13,14 +13,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Mobile devices වලදී Volume slider එක සඟවන්න */
+    <!-- === START: Mobile UI Improvements (CSS) === -->
+<style>
+    /* Mobile devices වලදී Volume slider එක සඟවන්න */
     @media (max-width: 768px) {
         .plyr__volume {
             display: none !important;
         }
     }
-    </style>
+    /* Press & Hold කරන විට සියලුම controls බලෙන් සඟවන්න */
+    .plyr.force-hide-all-controls .plyr__controls,
+    .plyr.force-hide-all-controls .plyr__control--overlaid {
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+</style>
+<!-- === END: Mobile UI Improvements (CSS) === -->
 </head>
 <body>
     
@@ -210,18 +218,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.closest('.plyr__controls')) return;
             touchStartY = e.touches[0].clientY;
 
-            // === Press & Hold (වැඩි දියුණු කළ) ===
             const rect = playerContainer.getBoundingClientRect();
             const touchX = e.touches[0].clientX;
             const touchPositionX = touchX - rect.left;
 
-            // **මෙන්න වැදගත්ම නිවැරදි කිරීම:**
-            // Touch එක දෙපැත්තෙන් එකක නම් විතරක් මේක වැඩ කරනවා
             if (touchPositionX < rect.width * 0.35 || touchPositionX > rect.width * 0.65) {
                 if (player.playing) {
                     wasPlayingBeforeHold = true;
                     player.pause();
-                    player.elements.container.classList.add('plyr--hide-controls');
+                    // **මෙන්න වැදගත්ම නිවැරදි කිරීම:**
+                    // අපි අපේ විශේෂ CSS නීතිය ක්‍රියාත්මක කරනවා
+                    player.elements.container.classList.add('force-hide-all-controls');
                 }
             }
         });
@@ -230,14 +237,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.closest('.plyr__controls')) return;
             if (!e.changedTouches || e.changedTouches.length === 0) return;
 
-            // Press & Hold එකෙන් පස්සේ ආයෙත් play කරනවා
-            player.elements.container.classList.remove('plyr--hide-controls');
+            // විශේෂ CSS නීතිය අයින් කරලා, player එක සාමාන්‍ය තත්වයට පත් කරනවා
+            player.elements.container.classList.remove('force-hide-all-controls');
             if (wasPlayingBeforeHold) {
                 player.play();
                 wasPlayingBeforeHold = false;
             }
 
-            // === Double-Tap Logic ===
             const currentTime = new Date().getTime();
             const tapLength = currentTime - lastTapTime;
             if (tapLength < DOUBLE_TAP_DELAY && tapLength > 0) {
@@ -249,11 +255,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (tapPositionX > rect.width * 0.65) { player.forward(10); document.querySelector('.skip-indicator-forward').classList.add('visible'); setTimeout(() => document.querySelector('.skip-indicator-forward').classList.remove('visible'), 500); }
                 else { player.fullscreen.toggle(); }
                 lastTapTime = 0;
-                return; // Double-tap එකක් නම්, swipe check කරන්න යන්නේ නෑ
+                return;
             }
             lastTapTime = currentTime;
 
-            // === Swipe-Up Logic ===
             const touchEndY = e.changedTouches[0].clientY;
             const swipeDistance = touchStartY - touchEndY;
             if (swipeDistance > 70) {
@@ -264,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         playerContainer.addEventListener('touchcancel', () => {
-             player.elements.container.classList.remove('plyr--hide-controls');
+             player.elements.container.classList.remove('force-hide-all-controls');
             if (wasPlayingBeforeHold) {
                 player.play();
                 wasPlayingBeforeHold = false;
