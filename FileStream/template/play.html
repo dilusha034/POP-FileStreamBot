@@ -14,7 +14,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* මෙතන තිබුණු #floating-notice style ටික ඉවත් කර ඇත */
+        /* Mobile devices වලදී Volume slider එක සඟවන්න */
+    @media (max-width: 768px) {
+        .plyr__volume {
+            display: none !important;
+        }
+    }
     </style>
 </head>
 <body>
@@ -129,6 +134,7 @@
 <script src="https://proavipatil.github.io/data/fs/src/script.js"></script>
 
 <!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (අවසාන සහ පරිපූර්ණ කේතය) === -->
+<!-- === අවසාන සහ පරිපූර්ණ Player Script එක === -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const fileName = "{{file_name}}";
@@ -137,12 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const attachSubtitleLoadingLogic = (player) => {
         if (!fileName.toLowerCase().endsWith('.mkv')) return;
-
         const overlay = document.createElement('div');
         overlay.className = 'subtitle-status-overlay';
         overlay.innerHTML = `<span>උපසිරැසි සකසමින් පවතී...</span>`;
         player.elements.container.appendChild(overlay);
-        
         const overlayStyles = `
             .subtitle-status-overlay {
                 position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -162,7 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const styleSheet = document.createElement("style");
         styleSheet.innerText = overlayStyles;
         document.head.appendChild(styleSheet);
-        
         player.once('play', () => {
             setTimeout(() => {
                 if (player.paused || player.seeking) return;
@@ -171,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
                     overlay.classList.remove('visible');
                     player.play();
-                }, 40000); 
+                }, 60000); 
             }, 5000); 
         });
     };
@@ -188,15 +191,16 @@ document.addEventListener('DOMContentLoaded', () => {
         forwardIndicator.className = 'skip-indicator skip-indicator-forward';
         forwardIndicator.innerHTML = `<span class="arrows">&raquo;</span><span>10s</span>`;
         playerContainer.appendChild(forwardIndicator);
-        let tapTimeout = null;
+        
         let lastTapTime = 0;
         const DOUBLE_TAP_DELAY = 300;
+        
         playerContainer.addEventListener('touchend', (e) => {
             if (e.target.closest('.plyr__controls')) return;
             if (!e.changedTouches || e.changedTouches.length === 0) return;
             const currentTime = new Date().getTime();
             const tapLength = currentTime - lastTapTime;
-            clearTimeout(tapTimeout);
+            
             if (tapLength < DOUBLE_TAP_DELAY && tapLength > 0) {
                 e.preventDefault(); e.stopPropagation();
                 const rect = playerContainer.getBoundingClientRect();
@@ -206,39 +210,64 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (tapPositionX > rect.width * 0.65) { player.forward(10); forwardIndicator.classList.add('visible'); setTimeout(() => forwardIndicator.classList.remove('visible'), 500); }
                 else { player.fullscreen.toggle(); }
                 lastTapTime = 0;
-            } else {
-                tapTimeout = setTimeout(() => { player.togglePlay(); }, DOUBLE_TAP_DELAY);
             }
+            // **මෙන්න වැදගත් නිවැරදි කිරීම:** අපි මෙතන තිබුණු single-tap 'else' කොටස සම්පූර්ණයෙන්ම ඉවත් කළා.
+            // දැන් player එකේ default single-tap (controls පෙන්වන) එක හරියටම වැඩ කරයි.
             lastTapTime = currentTime;
         });
+
         const styles = `.skip-indicator { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0, 0, 0, 0.4); color: white; padding: 15px 25px; border-radius: 50px; font-family: 'Josefin Sans', sans-serif; font-size: 1.2em; opacity: 0; transition: opacity 0.3s ease-out; pointer-events: none; display: flex; flex-direction: column; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); } .skip-indicator.visible { opacity: 1; } .skip-indicator .arrows { font-size: 2.5em; line-height: 1; font-weight: bold; } .skip-indicator-rewind { left: 10%; } .skip-indicator-forward { right: 10%; }`;
         const extraStyleSheet = document.createElement("style");
         extraStyleSheet.innerText = styles;
         document.head.appendChild(extraStyleSheet);
-        // **අපි Heading එක visible කරන එක මෙතනින් අයින් කරලා, පහලට ගන්නවා**
     };
+
+    // === START: මෙහෙයුම "Press & Hold" ===
+    const attachPressAndHoldLogic = (player) => {
+        // මේක mobile වලට විතරක් සීමා කරනවා
+        if (window.screen.width >= 768) return;
+
+        const playerContainer = player.elements.container;
+        let wasPlayingBeforeHold = false;
+
+        const handleTouchStart = (e) => {
+            // Controls bar එක උඩ touch කරොත් මුකුත් කරන්න එපා
+            if (e.target.closest('.plyr__controls')) return;
+            
+            if (player.playing) {
+                wasPlayingBeforeHold = true;
+                player.pause();
+            }
+        };
+
+        const handleTouchEnd = () => {
+            if (wasPlayingBeforeHold) {
+                player.play();
+                wasPlayingBeforeHold = false;
+            }
+        };
+
+        playerContainer.addEventListener('touchstart', handleTouchStart);
+        playerContainer.addEventListener('touchend', handleTouchEnd);
+        playerContainer.addEventListener('touchcancel', handleTouchEnd); // Touch එක cancel වුනොත් play කරන්න
+    };
+    // === END: මෙහෙයුම "Press & Hold" ===
 
     const initializePlayer = (tracks = []) => {
         const player = new Plyr(videoElement, { captions: { active: true, update: true, language: 'auto' } });
-        
         player.on('ready', event => {
             attachExtraFeatures(player);
             attachSubtitleLoadingLogic(player);
+            attachPressAndHoldLogic(player); // අලුත් Press & Hold feature එක එකතු කරනවා
 
-            // === START: මෙහෙයුම "මගේ නම" (ඔබගේ විසඳුම) ===
-            // පරණ script එකෙන් නම වෙනස් කරලා ඉවර වුනාට පස්සේ,
-            // අපි ආයෙත් අපේ නම දාලා, ඒක පේන්න සලස්වනවා.
             const headingElement = document.getElementById('heading');
             if (headingElement) {
-                headingElement.textContent = 'POP Tv One'; // මෙතනට ඔයාට කැමති නමක් දාන්න
+                headingElement.textContent = 'POP Tv One';
                 headingElement.style.visibility = 'visible';
             }
-            // === END: මෙහෙයුම "මගේ නම" ===
         });
-
         player.source = {
-            type: 'video',
-            title: fileName,
+            type: 'video', title: fileName,
             sources: [{ src: fileUrl, type: 'video/mp4' }],
             tracks: tracks
         };
@@ -249,23 +278,19 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(response => response.json())
             .then(subtitles => {
                 const tracks = (subtitles && subtitles.length > 0) ? subtitles.map((sub, i) => ({
-                    kind: 'subtitles',
-                    label: sub.label || sub.language.toUpperCase(),
+                    kind: 'subtitles', label: sub.label || sub.language.toUpperCase(),
                     srclang: sub.language.substring(0, 2),
                     src: `/subtitle/${fileUrl.split('/').pop()}?index=${sub.index}`,
                     default: i === 0
                 })) : [];
                 initializePlayer(tracks);
             })
-            .catch(err => {
-                initializePlayer();
-            });
+            .catch(err => { initializePlayer(); });
     } else {
         const player = new Plyr(videoElement);
         player.on('ready', event => {
             attachExtraFeatures(player);
-            
-            // MKV නොවන ෆයිල් වලටත් අපි මේක දානවා
+            attachPressAndHoldLogic(player); // MKV නොවන ෆයිල් වලටත් Press & Hold දානවා
             const headingElement = document.getElementById('heading');
             if (headingElement) {
                 headingElement.textContent = 'POP Tv One';
