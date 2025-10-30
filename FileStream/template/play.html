@@ -212,22 +212,19 @@ document.addEventListener('DOMContentLoaded', () => {
         let touchStartY = 0;
         let lastTapTime = 0;
         let controlsHideTimer = null;
+        let tapTimeout = null; // Single-tap timer එක
         const DOUBLE_TAP_DELAY = 300;
 
         playerContainer.addEventListener('touchstart', (e) => {
             if (e.target.closest('.plyr__controls')) return;
             touchStartY = e.touches[0].clientY;
-
             const rect = playerContainer.getBoundingClientRect();
             const touchX = e.touches[0].clientX;
             const touchPositionX = touchX - rect.left;
-
             if (touchPositionX < rect.width * 0.35 || touchPositionX > rect.width * 0.65) {
                 if (player.playing) {
                     wasPlayingBeforeHold = true;
                     player.pause();
-                    // **මෙන්න වැදගත්ම නිවැරදි කිරීම:**
-                    // අපි අපේ විශේෂ CSS නීතිය ක්‍රියාත්මක කරනවා
                     player.elements.container.classList.add('force-hide-all-controls');
                 }
             }
@@ -237,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.closest('.plyr__controls')) return;
             if (!e.changedTouches || e.changedTouches.length === 0) return;
 
-            // විශේෂ CSS නීතිය අයින් කරලා, player එක සාමාන්‍ය තත්වයට පත් කරනවා
             player.elements.container.classList.remove('force-hide-all-controls');
             if (wasPlayingBeforeHold) {
                 player.play();
@@ -246,7 +242,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const currentTime = new Date().getTime();
             const tapLength = currentTime - lastTapTime;
+            
+            clearTimeout(tapTimeout); // හැම tap එකකදීම පරණ timer එක අයින් කරනවා
+
             if (tapLength < DOUBLE_TAP_DELAY && tapLength > 0) {
+                // === Double-Tap Logic ===
                 e.preventDefault(); e.stopPropagation();
                 const rect = playerContainer.getBoundingClientRect();
                 const touchX = e.changedTouches[0].clientX;
@@ -255,17 +255,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (tapPositionX > rect.width * 0.65) { player.forward(10); document.querySelector('.skip-indicator-forward').classList.add('visible'); setTimeout(() => document.querySelector('.skip-indicator-forward').classList.remove('visible'), 500); }
                 else { player.fullscreen.toggle(); }
                 lastTapTime = 0;
-                return;
+            } else {
+                // === Single-Tap & Swipe Logic ===
+                tapTimeout = setTimeout(() => {
+                    const touchEndY = e.changedTouches[0].clientY;
+                    const swipeDistance = touchStartY - touchEndY;
+
+                    if (swipeDistance > 70) {
+                        // Swipe-Up Logic
+                        clearTimeout(controlsHideTimer);
+                        player.controls.show();
+                        controlsHideTimer = setTimeout(() => { player.controls.hide(); }, 20000);
+                    } else {
+                        // Single-Tap Logic
+                        player.togglePlay();
+                    }
+                }, DOUBLE_TAP_DELAY);
             }
             lastTapTime = currentTime;
-
-            const touchEndY = e.changedTouches[0].clientY;
-            const swipeDistance = touchStartY - touchEndY;
-            if (swipeDistance > 70) {
-                clearTimeout(controlsHideTimer);
-                player.controls.show();
-                controlsHideTimer = setTimeout(() => { player.controls.hide(); }, 20000);
-            }
         });
 
         playerContainer.addEventListener('touchcancel', () => {
@@ -291,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         player.source = {
             type: 'video', title: fileName,
-            sources: [{ src: fileUrl, type: 'video/mp4' }],
+            sources: [{ src: fileUrl, type: 'video/<em>mp4</em>' }],
             tracks: tracks
         };
     };
