@@ -133,7 +133,6 @@
 <script src="https://cdn.plyr.io/3.6.9/plyr.js"></script>
 <script src="https://proavipatil.github.io/data/fs/src/script.js"></script>
 
-<!-- === මෙහෙයුම "සංඥා බිඳවැටීම" (අවසාන සහ පරිපූර්ණ කේතය) === -->
 <!-- === අවසාන සහ පරිපූර්ණ Player Script එක === -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -142,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoElement = document.getElementById('player');
 
     const attachSubtitleLoadingLogic = (player) => {
+        // ... (මේ function එකේ කිසිම වෙනසක් කරලා නෑ, ඒ නිසා මෙතනින් ඉවත් කළා) ...
         if (!fileName.toLowerCase().endsWith('.mkv')) return;
         const overlay = document.createElement('div');
         overlay.className = 'subtitle-status-overlay';
@@ -180,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const attachExtraFeatures = (player) => {
+        // ... (මේ function එකේ කිසිම වෙනසක් කරලා නෑ) ...
         player.on('enterfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.lock === 'function') { screen.orientation.lock('landscape').catch(() => {}); } } catch (err) {} } });
         player.on('exitfullscreen', () => { if (window.screen.width < 768) { try { if (screen.orientation && typeof screen.orientation.unlock === 'function') { screen.orientation.unlock(); } } catch (err) {} } });
         const playerContainer = player.elements.container;
@@ -191,16 +192,13 @@ document.addEventListener('DOMContentLoaded', () => {
         forwardIndicator.className = 'skip-indicator skip-indicator-forward';
         forwardIndicator.innerHTML = `<span class="arrows">&raquo;</span><span>10s</span>`;
         playerContainer.appendChild(forwardIndicator);
-        
         let lastTapTime = 0;
         const DOUBLE_TAP_DELAY = 300;
-        
         playerContainer.addEventListener('touchend', (e) => {
             if (e.target.closest('.plyr__controls')) return;
             if (!e.changedTouches || e.changedTouches.length === 0) return;
             const currentTime = new Date().getTime();
             const tapLength = currentTime - lastTapTime;
-            
             if (tapLength < DOUBLE_TAP_DELAY && tapLength > 0) {
                 e.preventDefault(); e.stopPropagation();
                 const rect = playerContainer.getBoundingClientRect();
@@ -211,54 +209,72 @@ document.addEventListener('DOMContentLoaded', () => {
                 else { player.fullscreen.toggle(); }
                 lastTapTime = 0;
             }
-            // **මෙන්න වැදගත් නිවැරදි කිරීම:** අපි මෙතන තිබුණු single-tap 'else' කොටස සම්පූර්ණයෙන්ම ඉවත් කළා.
-            // දැන් player එකේ default single-tap (controls පෙන්වන) එක හරියටම වැඩ කරයි.
             lastTapTime = currentTime;
         });
-
         const styles = `.skip-indicator { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0, 0, 0, 0.4); color: white; padding: 15px 25px; border-radius: 50px; font-family: 'Josefin Sans', sans-serif; font-size: 1.2em; opacity: 0; transition: opacity 0.3s ease-out; pointer-events: none; display: flex; flex-direction: column; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); } .skip-indicator.visible { opacity: 1; } .skip-indicator .arrows { font-size: 2.5em; line-height: 1; font-weight: bold; } .skip-indicator-rewind { left: 10%; } .skip-indicator-forward { right: 10%; }`;
         const extraStyleSheet = document.createElement("style");
         extraStyleSheet.innerText = styles;
         document.head.appendChild(extraStyleSheet);
     };
 
-    // === START: මෙහෙයුම "Press & Hold" ===
-    const attachPressAndHoldLogic = (player) => {
-        // මේක mobile වලට විතරක් සීමා කරනවා
-        if (window.screen.width >= 768) return;
-
+    const attachMobileGestureLogic = (player) => {
+        if (window.screen.width >= 768) return; // Mobile වලට විතරයි
         const playerContainer = player.elements.container;
         let wasPlayingBeforeHold = false;
+        let touchStartY = 0; // Swipe එක පටන් ගන්න තැන Y අගය
+        let controlsHideTimer = null; // Controls හංගන timer එක
 
-        const handleTouchStart = (e) => {
-            // Controls bar එක උඩ touch කරොත් මුකුත් කරන්න එපා
+        // === Press & Hold Logic (වැඩි දියුණු කරන ලදී) ===
+        playerContainer.addEventListener('touchstart', (e) => {
             if (e.target.closest('.plyr__controls')) return;
-            
+            touchStartY = e.touches[0].clientY; // Swipe එකට පටන්ගන්න තැන සටහන් කරගන්නවා
             if (player.playing) {
                 wasPlayingBeforeHold = true;
                 player.pause();
+                // 1. ඔබාගෙන ඉද්දි Controls හංගනවා
+                player.elements.container.classList.add('plyr--hide-controls');
             }
-        };
+        });
 
-        const handleTouchEnd = () => {
+        playerContainer.addEventListener('touchend', (e) => {
+            // 2. ඇඟිල්ල ගත්තම Controls ආයෙත් පෙන්වනවා
+            player.elements.container.classList.remove('plyr--hide-controls');
             if (wasPlayingBeforeHold) {
                 player.play();
                 wasPlayingBeforeHold = false;
             }
-        };
 
-        playerContainer.addEventListener('touchstart', handleTouchStart);
-        playerContainer.addEventListener('touchend', handleTouchEnd);
-        playerContainer.addEventListener('touchcancel', handleTouchEnd); // Touch එක cancel වුනොත් play කරන්න
+            // === Swipe-Up Logic ===
+            const touchEndY = e.changedTouches[0].clientY;
+            const swipeDistance = touchStartY - touchEndY; // සිරස් දුර මනිනවා
+            
+            // Swipe එක උඩට සහ යම්කිසි දුරක් (70px) ගිහින් නම්...
+            if (swipeDistance > 70) {
+                clearTimeout(controlsHideTimer); // පරණ timer එකක් තියෙනවනම් අයින් කරනවා
+                player.controls.show(); // Controls පෙන්වනවා
+                
+                // ඔබ ඉල්ලූ විදිහට තත්පර 20කින් ආයෙත් හංගනවා
+                controlsHideTimer = setTimeout(() => {
+                    player.controls.hide();
+                }, 20000); // 20,000 milliseconds = 20 seconds
+            }
+        });
+
+        playerContainer.addEventListener('touchcancel', () => {
+             player.elements.container.classList.remove('plyr--hide-controls');
+            if (wasPlayingBeforeHold) {
+                player.play();
+                wasPlayingBeforeHold = false;
+            }
+        });
     };
-    // === END: මෙහෙයුම "Press & Hold" ===
 
     const initializePlayer = (tracks = []) => {
         const player = new Plyr(videoElement, { captions: { active: true, update: true, language: 'auto' } });
         player.on('ready', event => {
             attachExtraFeatures(player);
             attachSubtitleLoadingLogic(player);
-            attachPressAndHoldLogic(player); // අලුත් Press & Hold feature එක එකතු කරනවා
+            attachMobileGestureLogic(player); // අපේ අලුත් Mobile Gestures ඔක්කොම එක function එකකින් දානවා
 
             const headingElement = document.getElementById('heading');
             if (headingElement) {
@@ -290,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const player = new Plyr(videoElement);
         player.on('ready', event => {
             attachExtraFeatures(player);
-            attachPressAndHoldLogic(player); // MKV නොවන ෆයිල් වලටත් Press & Hold දානවා
+            attachMobileGestureLogic(player);
             const headingElement = document.getElementById('heading');
             if (headingElement) {
                 headingElement.textContent = 'POP Tv One';
