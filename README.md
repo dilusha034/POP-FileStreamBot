@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="[https://raw.githubusercontent.com/dilusha034/FileStreamBot/main/photo_2025-09-24_00-54-09.jpg](https://raw.githubusercontent.com/dilusha034/POP-FileStreamBot/refs/heads/main/photo_2025-09-24_00-54-09.jpg)" alt="POP Tv Logo" width="200">
+  <img src="https://github.com/dilusha034/POP-FileStreamBot/blob/be413ca2f6e89ea066d3939b4a432e834ccfcb9e/FileStream/POP-FileStreamBot-Logo.jpg?raw=true" alt="POP Tv Logo" width="200">
 </p>
 
 <h1 align="center">POP Tv One - File Stream Bot</h1>
