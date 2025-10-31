@@ -19,6 +19,20 @@
 
 ---
 
+### 💖 Support My Work
+
+This project is the result of countless hours of passion and dedication, especially in completely overhauling the video player with a professional UI and unique mobile features.
+
+If you've found this bot useful and appreciate the effort, please consider showing your support by buying me a coffee! It helps me dedicate more time to maintaining and improving this project for everyone. Thank you!
+
+<p align="center">
+  <a href="https://buymeacoffee.com/dilusha_disanayaka" target="_blank">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50">
+  </a>
+</p>
+
+---
+
 ### 🚀 About This Project
 
 This is a customized and enhanced version of the popular FileStreamBot, proudly maintained by **POP Tv One**. This bot allows you to generate direct streamable links for any file stored on Telegram, eliminating the need to download files before watching. It's fast, efficient, and perfect for media lovers!
