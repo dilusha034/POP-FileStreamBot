@@ -8,7 +8,8 @@ from FileStream.config import Telegram
 from FileStream.utils.database import Database
 from FileStream.utils.translation import LANG, BUTTON
 from pyrogram import filters, Client
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
+# --- මෙන්න අලුතෙන් එකතු කරන දේවල් ---
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, ReplyKeyboardMarkup, KeyboardButton
 from pyrogram.enums.parse_mode import ParseMode
 import asyncio
 
@@ -20,7 +21,17 @@ async def start(bot: Client, message: Message):
         return
     usr_cmd = message.text.split("_")[-1]
 
-    if usr_cmd == "/start":
+    # --- මෙන්න අපේ අලුත් Reply Keyboard එක ---
+    # User ට පහලින් පෙන්වන Keyboard එක නිර්මාණය කිරීම
+    start_keyboard = ReplyKeyboardMarkup(
+        [
+            [KeyboardButton("START")] # ඔබට අවශ්‍ය නම් මේ නම වෙනස් කරන්න පුළුවන්
+        ],
+        resize_keyboard=True, # Button එක ලස්සනට, පොඩියට පෙන්වන්න
+        one_time_keyboard=True # User, button එක click කළාට පස්සේ, මේ keyboard එක අයින් වෙලා සාමාන්‍ය keyboard එක එනවා
+    )
+
+    if usr_cmd == "/start" or message.text.upper() == "START": # User "/start" දුන්නත්, "START" button එක click කළත් එකම දේ වෙනවා
         if Telegram.START_PIC:
             await message.reply_photo(
                 photo=Telegram.START_PIC,
@@ -35,7 +46,15 @@ async def start(bot: Client, message: Message):
                 disable_web_page_preview=True,
                 reply_markup=BUTTON.START_BUTTONS
             )
+        
+        # Welcome message එක පෙන්නුවට පස්සේ, "START" button එක ආයෙත් පෙන්වනවා
+        await message.reply_text(
+            text="Use the button below or send me a file to get started!",
+            reply_markup=start_keyboard
+        )
+
     else:
+        # ... (ඔබගේ කේතයේ ඉතිරි කොටස, මෙතන කිසිම වෙනසක් කරලා නෑ) ...
         if "stream_" in message.text:
             try:
                 file_check = await db.get_file(usr_cmd)
@@ -81,8 +100,10 @@ async def start(bot: Client, message: Message):
         else:
             await message.reply_text(f"**Invalid Command**")
 
+# ... (ඔබගේ කේතයේ ඉතිරි function ටික, About, Help, Files... ඒවයේ කිසිම වෙනසක් කරලා නෑ) ...
+
 @FileStream.on_message(filters.private & filters.command(["about"]))
-async def start(bot, message):
+async def about(bot, message): # Function name එක "start" ඉඳන් "about" ට වෙනස් කළා, ගැටුම් වළක්වාගන්න
     if not await verify_user(bot, message):
         return
     if Telegram.START_PIC:
@@ -145,5 +166,3 @@ async def my_files(bot: Client, message: Message):
     await message.reply_photo(photo=Telegram.FILE_PIC,
                               caption="Total files: {}".format(total_files),
                               reply_markup=InlineKeyboardMarkup(file_list))
-
-
